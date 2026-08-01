@@ -43,11 +43,15 @@ assert "_original = null;" in clear_body
 fallback_body = map_engine.split("if (!_enabled || original == null)", 1)[1].split("long call", 1)[0]
 assert "original(position, radius, predicate).Count > 0" in fallback_body
 
-# Weekly materialization must preserve deferred source enumeration and source order,
-# with no extra Count access and no per-item atomic operation.
+# Weekly materialization must preserve immediate null failures, deferred source
+# enumeration, source order, and predicate behavior without per-item atomics.
+assert weekly.count("throw new ArgumentNullException(nameof(source));") == 2
+assert weekly.count("throw new ArgumentNullException(nameof(predicate));") == 2
+assert "predicate == null ||" not in weekly
 assert "var result = new List<T>();" in weekly
 assert "ICollection<T>" not in weekly
 loop_body = weekly.split("foreach (T item in source)", 1)[1].split("Interlocked.Add(ref _itemsVisited, visited);", 1)[0]
 assert "Interlocked." not in loop_body
+assert "if (predicate(item))" in loop_body
 
 print("Milestone 4 lifecycle, foreign-owner, fallback, and weekly semantic gates passed.")
