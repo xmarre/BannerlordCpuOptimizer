@@ -1,7 +1,7 @@
 <Module>
   <Name value="Bannerlord CPU Optimizer" />
   <Id value="BannerlordCpuOptimizer" />
-  <Version value="v0.3.1" />
+  <Version value="v0.3.2" />
   <DefaultModule value="false" />
   <SingleplayerModule value="true" />
   <MultiplayerModule value="false" />
