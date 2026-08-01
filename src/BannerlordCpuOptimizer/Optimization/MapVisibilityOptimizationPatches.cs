@@ -45,9 +45,10 @@ namespace BannerlordCpuOptimizer.Optimization
             MethodInfo find = findSpec.Resolve() as MethodInfo;
             MethodBase predicate = predicateSpec.Resolve();
 
-            if (!PatchGate.ValidateTarget(caller, callerSpec, false, out string callerReason)
-                || !PatchGate.ValidateTarget(find, findSpec, false, out string findReason)
-                || !PatchGate.ValidateTarget(predicate, predicateSpec, false, out string predicateReason))
+            bool callerValid = PatchGate.ValidateTarget(caller, callerSpec, false, out string callerReason);
+            bool findValid = PatchGate.ValidateTarget(find, findSpec, false, out string findReason);
+            bool predicateValid = PatchGate.ValidateTarget(predicate, predicateSpec, false, out string predicateReason);
+            if (!callerValid || !findValid || !predicateValid)
             {
                 OptimizerLog.Once("map-visibility-gate", "ERROR",
                     "Map-visibility optimization was not applied. Caller=" + callerReason
