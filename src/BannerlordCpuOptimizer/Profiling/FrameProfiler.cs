@@ -8,6 +8,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.MountAndBlade;
+using GameMission = TaleWorlds.MountAndBlade.Mission;
 
 namespace BannerlordCpuOptimizer.Profiling
 {
@@ -70,7 +71,7 @@ namespace BannerlordCpuOptimizer.Profiling
                 settlements = Settlement.All?.Count ?? 0;
                 campaignSpeed = campaign.TimeControlMode + " x" + campaign.SpeedUpMultiplier.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
             }
-            Mission mission = Mission.Current;
+            GameMission mission = GameMission.Current;
             if (mission != null)
             {
                 livingAgents = totalAgents = 0;
