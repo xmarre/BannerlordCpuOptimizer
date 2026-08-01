@@ -9,6 +9,7 @@ namespace BannerlordCpuOptimizer.Configuration
         [DataMember(Order = 1)] public GeneralSettings General { get; set; } = new GeneralSettings();
         [DataMember(Order = 2)] public ProfilingSettings Profiling { get; set; } = new ProfilingSettings();
         [DataMember(Order = 3)] public DiagnosticSettings Diagnostics { get; set; } = new DiagnosticSettings();
+        [DataMember(Order = 4)] public BenchmarkSettings Benchmark { get; set; } = new BenchmarkSettings();
 
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
@@ -16,6 +17,7 @@ namespace BannerlordCpuOptimizer.Configuration
             General = new GeneralSettings();
             Profiling = new ProfilingSettings();
             Diagnostics = new DiagnosticSettings();
+            Benchmark = new BenchmarkSettings();
         }
 
         public static OptimizerSettings CreateDefault() => new OptimizerSettings();
@@ -25,6 +27,7 @@ namespace BannerlordCpuOptimizer.Configuration
             General = General ?? new GeneralSettings();
             Profiling = Profiling ?? new ProfilingSettings();
             Diagnostics = Diagnostics ?? new DiagnosticSettings();
+            Benchmark = Benchmark ?? new BenchmarkSettings();
 
             General.CareerChoiceShadowComparisons = Clamp(General.CareerChoiceShadowComparisons, 1, 1000000);
             General.CareerChoiceMinimumDistinctIds = Clamp(General.CareerChoiceMinimumDistinctIds, 1, 10000);
@@ -49,6 +52,15 @@ namespace BannerlordCpuOptimizer.Configuration
             if (string.IsNullOrWhiteSpace(Profiling.ReportFormat))
             {
                 Profiling.ReportFormat = "Both";
+            }
+
+            if (string.IsNullOrWhiteSpace(Benchmark.RunLabel))
+            {
+                Benchmark.RunLabel = "unnamed";
+            }
+            if (string.IsNullOrWhiteSpace(Benchmark.ReportFormat))
+            {
+                Benchmark.ReportFormat = "Both";
             }
         }
 
@@ -128,6 +140,22 @@ namespace BannerlordCpuOptimizer.Configuration
             ProfileFocusedTargets = true;
             FocusedSampleEvery = 1;
             EnableOptionalContextMetrics = false;
+        }
+    }
+
+    [DataContract]
+    public sealed class BenchmarkSettings
+    {
+        [DataMember(Order = 1)] public bool Enabled { get; set; } = false;
+        [DataMember(Order = 2)] public string RunLabel { get; set; } = "optimized";
+        [DataMember(Order = 3)] public string ReportFormat { get; set; } = "Both";
+
+        [OnDeserializing]
+        private void OnDeserializing(StreamingContext context)
+        {
+            Enabled = false;
+            RunLabel = "optimized";
+            ReportFormat = "Both";
         }
     }
 
