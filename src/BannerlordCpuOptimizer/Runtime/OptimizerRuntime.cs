@@ -3,6 +3,7 @@ using System.Reflection;
 using BannerlordCpuOptimizer.Configuration;
 using BannerlordCpuOptimizer.Diagnostics;
 using BannerlordCpuOptimizer.Profiling;
+using GameCampaign = TaleWorlds.CampaignSystem.Campaign;
 
 namespace BannerlordCpuOptimizer.Runtime
 {
@@ -13,6 +14,7 @@ namespace BannerlordCpuOptimizer.Runtime
         private static HarmonyProfilerPatches _profilerPatches;
         private static ProfileSession _session;
         private static RuntimeOverlay _overlay;
+        private static bool _deferredProfilerTargetsApplied;
         private static bool _initialized;
 
         internal static bool ProfilingEnabled => _settings?.Profiling.Enabled == true;
@@ -31,8 +33,11 @@ namespace BannerlordCpuOptimizer.Runtime
                 _settings.Normalize();
                 OptimizerLog.Initialize(PathProvider.LogDirectory, _settings.Diagnostics.VerboseLogging);
                 EquivalenceValidator.IsEnabled = _settings.Diagnostics.ShadowValidation;
+                _deferredProfilerTargetsApplied = false;
 
-                OptimizerLog.Info("BannerlordCpuOptimizer " + (Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown") + " loading.");
+                OptimizerLog.Info("BannerlordCpuOptimizer "
+                    + (Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown")
+                    + " loading.");
                 OptimizerLog.Info("Settings loaded from: " + settingsPath + ".");
                 OptimizerLog.Info("Effective profiler configuration: enabled=" + _settings.Profiling.Enabled
                     + " torCampaign=" + _settings.Profiling.ProfileTorCampaignHandlers
@@ -49,7 +54,9 @@ namespace BannerlordCpuOptimizer.Runtime
 
                 if (_settings.Profiling.Enabled)
                 {
-                    FrameProfiler.Configure(_settings.Profiling.ContextSampleSeconds, _settings.Profiling.AllowUnknownProfilerTargets);
+                    FrameProfiler.Configure(
+                        _settings.Profiling.ContextSampleSeconds,
+                        _settings.Profiling.AllowUnknownProfilerTargets);
                     _profilerPatches = new HarmonyProfilerPatches(_settings);
                     _profilerPatches.Apply();
                     _overlay = _settings.Diagnostics.RuntimeOverlay ? new RuntimeOverlay() : null;
@@ -68,6 +75,15 @@ namespace BannerlordCpuOptimizer.Runtime
             if (!ProfilingEnabled)
             {
                 return;
+            }
+
+            if (!_deferredProfilerTargetsApplied && _session != null && GameCampaign.Current != null)
+            {
+                // OnApplicationTick cannot run inside the synchronous OnGameStart callback chain.
+                // Reaching this point proves TOR has completed model registration and its text-backed
+                // TORCustomResourceModel type initializer has already run under the correct game state.
+                _deferredProfilerTargetsApplied = true;
+                _profilerPatches?.ApplyDeferredTargets();
             }
 
             FrameProfiler.OnApplicationTick();
@@ -127,6 +143,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 _profilerPatches = null;
                 _session = null;
                 _settings = null;
+                _deferredProfilerTargetsApplied = false;
                 _initialized = false;
                 OptimizerLog.Info("Teardown complete; profiler state and lifecycle references cleared.");
                 OptimizerLog.Shutdown();
@@ -154,7 +171,10 @@ namespace BannerlordCpuOptimizer.Runtime
             }
             catch (Exception exception)
             {
-                OptimizerLog.WriteExceptionOnce("profile-report-" + _session.SessionId, "Could not write profile report", exception);
+                OptimizerLog.WriteExceptionOnce(
+                    "profile-report-" + _session.SessionId,
+                    "Could not write profile report",
+                    exception);
             }
             finally
             {

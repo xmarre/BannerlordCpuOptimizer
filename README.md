@@ -8,6 +8,8 @@ This version does not optimize or replace gameplay code. Profiling is disabled b
 
 The implementation deliberately contains no AI throttling, simulation throttling, native pathfinding/physics patches, transpilers, background TaleWorlds access, or serialized optimizer state.
 
+`TORCustomResourceModel` and its compiler-generated nested methods are attached only after campaign startup has completed. This prevents Harmony from triggering TOR's localized-text static initializer while submodules are still loading.
+
 ## Project layout
 
 - `src/BannerlordCpuOptimizer`: module source
@@ -48,7 +50,7 @@ Package after a successful build:
 Expected package:
 
 ```text
-artifacts\BannerlordCpuOptimizer-v0.1.1-profiler-only.zip
+artifacts\BannerlordCpuOptimizer-v0.1.2-profiler-only.zip
 ```
 
 ## Enable profiling

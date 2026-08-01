@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 - TOR startup crash fix
+
+- Fixed profiler startup faulting `TOR_Core.Models.TORCustomResourceModel` before localized game texts were initialized.
+- Deferred the complete `TORCustomResourceModel` type family, including compiler-generated nested methods, until campaign startup has completed.
+- Preserved profiling coverage by attaching those deferred targets on the first campaign application tick.
+- Added a release gate enforcing deferral before any Harmony patch attempt.
+- Preserved every other target, sampling rate, report format, and profiler-only gameplay boundary.
+
 ## 0.1.1 - Profiler settings loading fix
 
 - Fixed the packaged `ModuleData/BannerlordCpuOptimizer/settings.json` being ignored at runtime.
