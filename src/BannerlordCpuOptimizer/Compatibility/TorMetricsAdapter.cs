@@ -3,6 +3,7 @@ using System.Collections;
 using System.Reflection;
 using BannerlordCpuOptimizer.Runtime;
 using TaleWorlds.MountAndBlade;
+using GameMission = TaleWorlds.MountAndBlade.Mission;
 
 namespace BannerlordCpuOptimizer.Compatibility
 {
@@ -19,7 +20,7 @@ namespace BannerlordCpuOptimizer.Compatibility
             _allowUnknown = allowUnknown;
         }
 
-        internal static int ReadActiveSpellOrEffectCount(Mission mission)
+        internal static int ReadActiveSpellOrEffectCount(GameMission mission)
         {
             if (mission == null)
             {
