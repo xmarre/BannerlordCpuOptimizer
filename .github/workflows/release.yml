@@ -13,8 +13,8 @@ jobs:
     runs-on: windows-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: v0.2.1
-      RELEASE_TITLE: Bannerlord CPU Optimizer v0.2.1 - Harmony teardown fix
+      RELEASE_TAG: v0.3.0
+      RELEASE_TITLE: Bannerlord CPU Optimizer v0.3.0 - Whole-process campaign measurement
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: |
             src/BannerlordCpuOptimizer/BannerlordCpuOptimizer.csproj
             tests/BannerlordCpuOptimizer.HarmonyTeardownHarness/BannerlordCpuOptimizer.HarmonyTeardownHarness.csproj
-      - name: Build and run Milestone 2 safety gates
+      - name: Build and run Milestone 3 safety gates
         shell: pwsh
         run: .\build.ps1 -Configuration Release
       - name: Package module
@@ -38,7 +38,7 @@ jobs:
       - name: Verify package contents
         shell: pwsh
         run: |
-          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.2.1-milestone2.zip'
+          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.3.0-campaign-measurement.zip'
           $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
           try {
             $entries = $archive.Entries.FullName
@@ -46,7 +46,9 @@ jobs:
               'Modules/BannerlordCpuOptimizer/SubModule.xml',
               'Modules/BannerlordCpuOptimizer/bin/Win64_Shipping_Client/BannerlordCpuOptimizer.dll',
               'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.json',
-              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.profiler.json'
+              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.profiler.json',
+              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.benchmark-baseline.json',
+              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.benchmark-optimized.json'
             )
             foreach ($path in $required) {
               if ($entries -notcontains $path) { throw "Release archive is missing $path" }
@@ -66,10 +68,10 @@ jobs:
             exit 0
           }
           gh release create $env:RELEASE_TAG `
-            '.\artifacts\BannerlordCpuOptimizer-v0.2.1-milestone2.zip' `
+            '.\artifacts\BannerlordCpuOptimizer-v0.3.0-campaign-measurement.zip' `
             '.\artifacts\SHA256SUMS.txt' `
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
             --title $env:RELEASE_TITLE `
-            --notes-file '.\.github\release-notes\v0.2.1.md' `
+            --notes-file '.\.github\release-notes\v0.3.0.md' `
             --latest
