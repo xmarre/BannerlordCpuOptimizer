@@ -175,12 +175,12 @@ namespace BannerlordCpuOptimizer.Runtime
         {
             lock (Sync)
             {
+                _benchmarkSession?.CampaignHourElapsed();
                 if (_benchmarkSession == null)
                 {
                     return;
                 }
 
-                _benchmarkSession.CampaignHourElapsed();
                 _benchmarkCampaignHours++;
                 if (_benchmarkCampaignHours < AutomaticBenchmarkTargetHours)
                 {
