@@ -26,7 +26,7 @@ namespace BannerlordCpuOptimizer
         {
             base.OnGameStart(game, gameStarter);
             OptimizerRuntime.OnGameStarted();
-            if (OptimizerRuntime.ProfilingEnabled && gameStarter is CampaignGameStarter campaignStarter)
+            if (OptimizerRuntime.MeasurementEnabled && gameStarter is CampaignGameStarter campaignStarter)
             {
                 campaignStarter.AddBehavior(new ProfilerCampaignBehavior());
                 LifecycleManager.OnCampaignStarted();
