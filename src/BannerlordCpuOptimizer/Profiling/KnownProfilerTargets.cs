@@ -22,7 +22,18 @@ namespace BannerlordCpuOptimizer.Profiling
             };
         }
 
+        internal static IReadOnlyList<ProfilerTargetSpec> CreateFocused(int sampleEvery)
+        {
+            return new[]
+            {
+                Spec("TOR_Core.CharacterDevelopment.TORCareerChoices", "GetChoice", "TOR_Core.CharacterDevelopment.CareerSystem.CareerChoiceObject", new[] { "System.String" }, "Milestone 2 focused", sampleEvery, "d43d63915c133164674d16f246e8d55afd0e165d322fd6ca2b3d5a9e6956d56d"),
+                Spec("TOR_Core.CharacterDevelopment.CareerSystem.CareerHelper", "CalculateTroopWageCareerPerkEffect", "System.Single", new[] { "TaleWorlds.CampaignSystem.Roster.TroopRosterElement", "TOR_Core.CharacterDevelopment.CareerSystem.CareerChoiceObject", "TaleWorlds.Localization.TextObject&" }, "Milestone 2 focused", sampleEvery, "625660a4834ee1ff607d04d167920656c598be39c61cc01564711205731e816e"),
+                Spec("TOR_Core.Utilities.TORCommon", "FindSettlementsAroundPosition", "TaleWorlds.Library.MBList`1[TaleWorlds.CampaignSystem.Settlements.Settlement]", new[] { "TaleWorlds.Library.Vec2", "System.Single", "System.Func`2[TaleWorlds.CampaignSystem.Settlements.Settlement,System.Boolean]" }, "Milestone 2 focused", sampleEvery, "34208fbc8958a6c869968edd8ac7e0018a2691f120cfb0893958d989ff971876")
+            };
+        }
+
         private static readonly string[] Empty = new string[0];
+
         private static ProfilerTargetSpec Spec(string typeName, string methodName, string returnTypeName, string[] parameterTypeNames, string category, int sampleEvery, string hash)
         {
             return new ProfilerTargetSpec("TOR_Core", typeName, methodName, returnTypeName, parameterTypeNames, category, sampleEvery, hash);

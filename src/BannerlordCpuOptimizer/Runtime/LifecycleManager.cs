@@ -1,4 +1,5 @@
 using BannerlordCpuOptimizer.Compatibility;
+using BannerlordCpuOptimizer.Optimization;
 using BannerlordCpuOptimizer.Profiling;
 
 namespace BannerlordCpuOptimizer.Runtime
@@ -7,14 +8,12 @@ namespace BannerlordCpuOptimizer.Runtime
     {
         internal static void OnMissionStarted()
         {
-            FrameProfiler.MissionStarted();
             TorMetricsAdapter.ClearInstanceCache();
         }
 
         internal static void OnMissionEnded()
         {
             TorMetricsAdapter.ClearInstanceCache();
-            FrameProfiler.MissionEnded();
         }
 
         internal static void OnCampaignStarted()
@@ -30,6 +29,7 @@ namespace BannerlordCpuOptimizer.Runtime
 
         internal static void ClearAll()
         {
+            CareerChoiceCache.ClearAll();
             TorMetricsAdapter.ClearAll();
             FrameProfiler.ResetLifecycleState();
             MethodProfiler.ClearSessionData();

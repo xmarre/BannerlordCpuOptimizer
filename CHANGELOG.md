@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0 - Measured TOR wage-path optimization
+
+- Added a strictly MVID/signature/IL-gated cache for `TORCareerChoices.GetChoice(string)`.
+- Bound cached TOR object references to the exact current campaign instance.
+- Added a 256-comparison reference-identity shadow gate before activation.
+- Required every career-choice ID, including IDs first seen after activation, to pass its own reference comparison before serving.
+- Added one original-call audit per 1,024 validated cache-hit candidates.
+- Added fail-closed fallback on mismatches, unexpected nulls, exceptions, campaign changes, game end, and module teardown.
+- Refused the optimization on unknown/changed TOR builds or foreign Harmony ownership of the target.
+- Added focused direct profiling for `TORCareerChoices.GetChoice`, `CareerHelper.CalculateTroopWageCareerPerkEffect`, and `TORCommon.FindSettlementsAroundPosition`.
+- Added a focused profiler template with broad TOR and vanilla profiling disabled.
+- Fixed mission counting by following `Mission.Current` identity transitions.
+- Separated optional context metrics from `AllowUnknownProfilerTargets`.
+- Added JSON and CSV cache validation statistics, including a dedicated optimization CSV.
+- Preserved AI cadence, simulation cadence, mission logic, UI behavior, native systems, save format, and original TOR formulas.
+
 ## 0.1.2 - TOR startup crash fix
 
 - Fixed profiler startup faulting `TOR_Core.Models.TORCustomResourceModel` before localized game texts were initialized.

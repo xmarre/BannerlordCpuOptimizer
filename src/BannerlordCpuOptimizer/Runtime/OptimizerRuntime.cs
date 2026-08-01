@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using BannerlordCpuOptimizer.Configuration;
 using BannerlordCpuOptimizer.Diagnostics;
+using BannerlordCpuOptimizer.Optimization;
 using BannerlordCpuOptimizer.Profiling;
 using GameCampaign = TaleWorlds.CampaignSystem.Campaign;
 
@@ -12,9 +13,13 @@ namespace BannerlordCpuOptimizer.Runtime
         private static readonly object Sync = new object();
         private static OptimizerSettings _settings;
         private static HarmonyProfilerPatches _profilerPatches;
+        private static CareerChoiceCachePatches _careerChoiceCachePatches;
         private static ProfileSession _session;
         private static RuntimeOverlay _overlay;
         private static bool _deferredProfilerTargetsApplied;
+        private static bool _optimizationPatchAttempted;
+        private static bool _gameActive;
+        private static GameCampaign _observedCampaign;
         private static bool _initialized;
 
         internal static bool ProfilingEnabled => _settings?.Profiling.Enabled == true;
@@ -33,37 +38,55 @@ namespace BannerlordCpuOptimizer.Runtime
                 _settings.Normalize();
                 OptimizerLog.Initialize(PathProvider.LogDirectory, _settings.Diagnostics.VerboseLogging);
                 EquivalenceValidator.IsEnabled = _settings.Diagnostics.ShadowValidation;
+                CareerChoiceCache.Configure(
+                    _settings.General.CareerChoiceCacheMode,
+                    _settings.General.CareerChoiceShadowComparisons,
+                    _settings.General.CareerChoiceMinimumDistinctIds,
+                    _settings.General.CareerChoiceAuditEvery);
+
                 _deferredProfilerTargetsApplied = false;
+                _optimizationPatchAttempted = false;
+                _gameActive = false;
+                _observedCampaign = null;
 
                 OptimizerLog.Info("BannerlordCpuOptimizer "
                     + (Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown")
                     + " loading.");
                 OptimizerLog.Info("Settings loaded from: " + settingsPath + ".");
                 OptimizerLog.Info("Effective profiler configuration: enabled=" + _settings.Profiling.Enabled
+                    + " focused=" + _settings.Profiling.ProfileFocusedTargets
                     + " torCampaign=" + _settings.Profiling.ProfileTorCampaignHandlers
                     + " torMission=" + _settings.Profiling.ProfileTorMissionHandlers
                     + " torModels=" + _settings.Profiling.ProfileTorModels
                     + " vanilla=" + _settings.Profiling.ProfileVanillaHandlers
+                    + " optionalMetrics=" + _settings.Profiling.EnableOptionalContextMetrics
                     + " overlay=" + _settings.Diagnostics.RuntimeOverlay + ".");
+                OptimizerLog.Info("Effective career-choice cache configuration: mode="
+                    + _settings.General.CareerChoiceCacheMode
+                    + " comparisons=" + _settings.General.CareerChoiceShadowComparisons
+                    + " minimumDistinctIds=" + _settings.General.CareerChoiceMinimumDistinctIds
+                    + " auditEvery=" + _settings.General.CareerChoiceAuditEvery + ".");
+
                 foreach (AssemblyIdentity identity in AssemblyProbe.CaptureLoadedAssemblies())
                 {
                     OptimizerLog.Info("Assembly: " + identity);
                 }
 
                 LogMilestoneState();
+                _careerChoiceCachePatches = new CareerChoiceCachePatches(_settings);
 
                 if (_settings.Profiling.Enabled)
                 {
                     FrameProfiler.Configure(
                         _settings.Profiling.ContextSampleSeconds,
-                        _settings.Profiling.AllowUnknownProfilerTargets);
+                        _settings.Profiling.EnableOptionalContextMetrics);
                     _profilerPatches = new HarmonyProfilerPatches(_settings);
                     _profilerPatches.Apply();
                     _overlay = _settings.Diagnostics.RuntimeOverlay ? new RuntimeOverlay() : null;
                 }
                 else
                 {
-                    OptimizerLog.Info("Profiler is disabled. No Harmony patches were applied by Milestone 1.");
+                    OptimizerLog.Info("Profiler is disabled. Focused optimization gating remains active independently.");
                 }
 
                 _initialized = true;
@@ -72,18 +95,32 @@ namespace BannerlordCpuOptimizer.Runtime
 
         internal static void OnApplicationTick()
         {
-            if (!ProfilingEnabled)
+            if (!_initialized)
             {
                 return;
             }
 
-            if (!_deferredProfilerTargetsApplied && _session != null && GameCampaign.Current != null)
+            GameCampaign currentCampaign = GameCampaign.Current;
+            TrackCampaignIdentity(currentCampaign);
+
+            if (_gameActive && currentCampaign != null)
             {
-                // OnApplicationTick cannot run inside the synchronous OnGameStart callback chain.
-                // Reaching this point proves TOR has completed model registration and its text-backed
-                // TORCustomResourceModel type initializer has already run under the correct game state.
-                _deferredProfilerTargetsApplied = true;
-                _profilerPatches?.ApplyDeferredTargets();
+                if (!_optimizationPatchAttempted)
+                {
+                    _optimizationPatchAttempted = true;
+                    _careerChoiceCachePatches?.Apply();
+                }
+
+                if (ProfilingEnabled && !_deferredProfilerTargetsApplied)
+                {
+                    _deferredProfilerTargetsApplied = true;
+                    _profilerPatches?.ApplyDeferredTargets();
+                }
+            }
+
+            if (!ProfilingEnabled)
+            {
+                return;
             }
 
             FrameProfiler.OnApplicationTick();
@@ -92,33 +129,36 @@ namespace BannerlordCpuOptimizer.Runtime
 
         internal static void OnGameStarted()
         {
-            if (!ProfilingEnabled)
-            {
-                return;
-            }
-
             lock (Sync)
             {
-                if (_session != null)
+                if (ProfilingEnabled && _session != null)
                 {
                     WriteSession("game-restart");
                 }
 
-                StartSession();
+                _gameActive = true;
+                _observedCampaign = GameCampaign.Current;
+                CareerChoiceCache.BeginGameSession(_observedCampaign);
+
+                if (ProfilingEnabled)
+                {
+                    StartSession();
+                }
             }
         }
 
         internal static void OnGameEnded()
         {
-            if (!ProfilingEnabled)
-            {
-                LifecycleManager.OnCampaignEnded();
-                return;
-            }
-
             lock (Sync)
             {
-                WriteSession("game-end");
+                _gameActive = false;
+                _observedCampaign = null;
+                if (ProfilingEnabled)
+                {
+                    WriteSession("game-end");
+                }
+
+                CareerChoiceCache.EndGameSession();
                 LifecycleManager.OnCampaignEnded();
             }
         }
@@ -132,22 +172,51 @@ namespace BannerlordCpuOptimizer.Runtime
                     return;
                 }
 
+                _gameActive = false;
+                _observedCampaign = null;
                 if (ProfilingEnabled)
                 {
                     WriteSession("module-unload");
                     _profilerPatches?.Remove();
                 }
 
+                _careerChoiceCachePatches?.Remove();
                 LifecycleManager.ClearAll();
                 _overlay = null;
                 _profilerPatches = null;
+                _careerChoiceCachePatches = null;
                 _session = null;
                 _settings = null;
                 _deferredProfilerTargetsApplied = false;
+                _optimizationPatchAttempted = false;
                 _initialized = false;
-                OptimizerLog.Info("Teardown complete; profiler state and lifecycle references cleared.");
+                OptimizerLog.Info("Teardown complete; profiler, optimization, cache, and lifecycle state cleared.");
                 OptimizerLog.Shutdown();
             }
+        }
+
+        private static void TrackCampaignIdentity(GameCampaign currentCampaign)
+        {
+            if (!_gameActive)
+            {
+                return;
+            }
+
+            if (ReferenceEquals(_observedCampaign, currentCampaign))
+            {
+                return;
+            }
+
+            _observedCampaign = currentCampaign;
+            if (currentCampaign == null)
+            {
+                CareerChoiceCache.EndGameSession();
+                OptimizerLog.Info("Career-choice cache cleared because Campaign.Current became unavailable.");
+                return;
+            }
+
+            CareerChoiceCache.BeginGameSession(currentCampaign);
+            OptimizerLog.Info("Career-choice cache entered shadow validation for the current campaign instance.");
         }
 
         private static void StartSession()
@@ -184,8 +253,9 @@ namespace BannerlordCpuOptimizer.Runtime
 
         private static void LogMilestoneState()
         {
-            OptimizerLog.Info("Milestone 1 mode: profiler-only; gameplay optimization patches are not implemented or applied.");
-            OptimizerLog.Info("Configured future switches: vanilla=" + _settings.General.VanillaSafeOptimizations
+            OptimizerLog.Info("Milestone 2 mode: one strictly gated TOR campaign optimization plus focused profiling.");
+            OptimizerLog.Info("Active optimization boundary: TORCareerChoices.GetChoice reference cache only; no AI, simulation, mission, UI, native, or background-thread changes.");
+            OptimizerLog.Info("Configured switches: vanilla=" + _settings.General.VanillaSafeOptimizations
                 + " torCampaign=" + _settings.General.TorCampaignOptimizations
                 + " torMission=" + _settings.General.TorMissionOptimizations
                 + " ui=" + _settings.General.UiDirtyStateOptimizations
