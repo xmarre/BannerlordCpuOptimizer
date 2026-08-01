@@ -13,8 +13,7 @@ namespace BannerlordCpuOptimizer.Optimization
         public static List<T> FilterToList<T>(IEnumerable<T> source, Func<T, bool> predicate)
         {
             Interlocked.Increment(ref _filterCalls);
-            ICollection<T> collection = source as ICollection<T>;
-            var result = collection == null ? new List<T>() : new List<T>(collection.Count);
+            var result = new List<T>();
             if (source == null)
             {
                 return result;
