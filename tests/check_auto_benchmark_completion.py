@@ -6,7 +6,7 @@ runtime = (ROOT / "src" / "BannerlordCpuOptimizer" / "Runtime" / "OptimizerRunti
 
 assert "private const int AutomaticBenchmarkTargetHours = 200;" in runtime
 assert "if (_benchmarkSession == null)" in runtime
-assert "_benchmarkSession.CampaignHourElapsed();" in runtime
+assert "_benchmarkSession?.CampaignHourElapsed();" in runtime
 assert "_benchmarkCampaignHours++;" in runtime
 assert "_benchmarkCampaignHours < AutomaticBenchmarkTargetHours" in runtime
 assert "WriteBenchmark(completionReason);" in runtime
@@ -14,7 +14,7 @@ assert "if (ProfilingEnabled)" in runtime
 assert "WriteSession(completionReason);" in runtime
 assert "InformationManager.DisplayMessage" in runtime
 assert "Reports were written; you can exit normally." in runtime
-assert runtime.index("_benchmarkSession.CampaignHourElapsed();") < runtime.index("WriteBenchmark(completionReason);")
+assert runtime.index("_benchmarkSession?.CampaignHourElapsed();") < runtime.index("WriteBenchmark(completionReason);")
 assert runtime.index("WriteBenchmark(completionReason);") < runtime.index("InformationManager.DisplayMessage")
 assert "_benchmarkCampaignHours = 0;" in runtime
 
