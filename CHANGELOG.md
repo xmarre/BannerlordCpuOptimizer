@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.1 - MCM configuration
+
+- Replaced all packaged JSON settings and mode templates with a proper MCM v5 menu.
+- Added one operating-mode selector for Normal Gameplay, Benchmark - Baseline, Benchmark - Optimized, Focused Profiler, and Custom.
+- Made the baseline and optimized modes automatically enforce profiling-free comparison settings, cache state, and fixed report labels.
+- Added grouped MCM controls for optimization gates, career-choice cache validation, profiler targets, sampling, reports, and diagnostics.
+- Made MCM global settings authoritative and retained the old JSON loader only as an emergency fallback.
+- Delayed runtime initialization until MCM settings are available after `OnSubModuleLoad`.
+- Added a required `Bannerlord.MBOptionScreen` dependency without bundling MCM assemblies.
+- Removed `settings.json`, `settings.profiler.json`, `settings.benchmark-baseline.json`, and `settings.benchmark-optimized.json` from the release package.
+- Added release gates rejecting manual settings templates and bundled MCM runtime DLLs.
+- Preserved the exact-gated career-choice cache, benchmark output, focused profiler target set, and Harmony teardown behavior.
+
 ## 0.3.0 - Whole-process campaign measurement
 
 - Added profiler-independent whole-process benchmark sessions.

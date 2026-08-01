@@ -2,9 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>BannerlordCpuOptimizer</AssemblyName>
-    <Version>0.3.0</Version>
-    <AssemblyVersion>0.3.0.0</AssemblyVersion>
-    <FileVersion>0.3.0.0</FileVersion>
+    <Version>0.3.1</Version>
+    <AssemblyVersion>0.3.1.0</AssemblyVersion>
+    <FileVersion>0.3.1.0</FileVersion>
     <RootNamespace>BannerlordCpuOptimizer</RootNamespace>
     <Platforms>AnyCPU</Platforms>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -17,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" PrivateAssets="All" />
     <PackageReference Include="Bannerlord.ReferenceAssemblies.Core" Version="1.3.15.110062" PrivateAssets="All" />
+    <PackageReference Include="Bannerlord.MCM" Version="5.10.1" IncludeAssets="compile" />
     <PackageReference Include="Lib.Harmony" Version="2.3.3" PrivateAssets="All" ExcludeAssets="runtime" />
   </ItemGroup>
 

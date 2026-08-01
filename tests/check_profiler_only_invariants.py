@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Static release gates for Milestone 3 measurement and the gated TOR cache."""
+"""Static release gates for Milestone 3 measurement, MCM configuration, and the gated TOR cache."""
 from __future__ import annotations
 
-import json
 import pathlib
 import re
 
@@ -15,21 +14,14 @@ def read(relative: str) -> str:
     return (SRC / relative).read_text(encoding="utf-8")
 
 
-def load_settings(name: str) -> dict:
-    return json.loads((MODULE_DATA / name).read_text(encoding="utf-8"))
-
-
 def main() -> int:
     sources = "\n".join(path.read_text(encoding="utf-8") for path in SRC.rglob("*.cs"))
-    settings = load_settings("settings.json")
-    profiler = load_settings("settings.profiler.json")
-    baseline = load_settings("settings.benchmark-baseline.json")
-    optimized = load_settings("settings.benchmark-optimized.json")
     cache = read("Optimization/CareerChoiceCache.cs")
     patches = read("Optimization/CareerChoiceCachePatches.cs")
     bridge = read("Optimization/CareerChoicePatchBridge.cs")
     exact_factory = read("Optimization/ExactResultPatchFactory.cs")
     optimization_targets = read("Optimization/KnownOptimizationTargets.cs")
+    mcm = read("Configuration/OptimizerMcmSettings.cs")
     runtime = read("Runtime/OptimizerRuntime.cs")
     submodule = read("SubModule.cs")
     campaign_behavior = read("Campaign/ProfilerCampaignBehavior.cs")
@@ -39,33 +31,54 @@ def main() -> int:
     targets = read("Profiling/KnownProfilerTargets.cs")
     profiler_patches = read("Profiling/HarmonyProfilerPatches.cs")
     gate = read("Runtime/PatchGate.cs")
+    project = (SRC / "BannerlordCpuOptimizer.csproj").read_text(encoding="utf-8")
+    module_xml = (ROOT / "module" / "BannerlordCpuOptimizer" / "SubModule.xml").read_text(encoding="utf-8")
     build = (ROOT / "build.ps1").read_text(encoding="utf-8")
     harness = (ROOT / "tests" / "BannerlordCpuOptimizer.HarmonyTeardownHarness" / "Program.cs").read_text(encoding="utf-8")
 
-    assert settings["Profiling"]["Enabled"] is False
-    assert settings["Benchmark"]["Enabled"] is False
-    assert settings["General"]["ExperimentalNativePatches"] is False
-    assert settings["General"]["CareerChoiceCacheMode"] == "ShadowThenEnable"
-    assert settings["General"]["CareerChoiceShadowComparisons"] >= 256
-    assert settings["General"]["CareerChoiceAuditEvery"] >= 1
+    # MCM is the packaged configuration surface. No manual mode/template copying remains.
+    assert "AttributeGlobalSettings<OptimizerMcmSettings>" in mcm
+    assert 'Id => "BannerlordCpuOptimizer_v1"' in mcm
+    assert 'FormatType => "json2"' in mcm
+    assert 'NormalMode = "Normal Gameplay"' in mcm
+    assert 'BaselineMode = "Benchmark - Baseline"' in mcm
+    assert 'OptimizedMode = "Benchmark - Optimized"' in mcm
+    assert 'FocusedProfilerMode = "Focused Profiler"' in mcm
+    assert 'CustomMode = "Custom"' in mcm
+    assert "SettingPropertyDropdown" in mcm
+    assert "SettingPropertyBool" in mcm
+    assert "SettingPropertyInteger" in mcm
+    assert "SettingPropertyFloatingInteger" in mcm
+    assert "SettingPropertyText" in mcm
+    assert "RequireRestart = false" not in mcm
+    assert 'settings.Benchmark.RunLabel = "baseline-cache-disabled"' in mcm
+    assert 'settings.General.CareerChoiceCacheMode = "Disabled"' in mcm
+    assert 'settings.Benchmark.RunLabel = "optimized-cache-enabled"' in mcm
+    assert mcm.count('settings.General.CareerChoiceCacheMode = "ShadowThenEnable"') >= 2
+    assert "settings.Profiling.Enabled = CustomProfilerEnabled" in mcm
+    assert "settings.Benchmark.Enabled = CustomBenchmarkEnabled" in mcm
+    assert "settings.Normalize()" in mcm
 
-    assert profiler["Profiling"]["Enabled"] is True
-    assert profiler["Benchmark"]["Enabled"] is True
-    assert profiler["Profiling"]["ProfileFocusedTargets"] is True
-    assert profiler["Profiling"]["ProfileTorCampaignHandlers"] is False
-    assert profiler["Profiling"]["ProfileTorMissionHandlers"] is False
-    assert profiler["Profiling"]["ProfileTorModels"] is False
-    assert profiler["Diagnostics"]["RuntimeOverlay"] is False
+    assert 'PackageReference Include="Bannerlord.MCM" Version="5.10.1" IncludeAssets="compile"' in project
+    assert '<DependedModule Id="Bannerlord.MBOptionScreen" />' in module_xml
+    for legacy_name in (
+        "settings.json",
+        "settings.profiler.json",
+        "settings.benchmark-baseline.json",
+        "settings.benchmark-optimized.json",
+    ):
+        assert not (MODULE_DATA / legacy_name).exists(), f"Manual template still packaged: {legacy_name}"
 
-    assert baseline["Profiling"]["Enabled"] is False
-    assert baseline["Benchmark"]["Enabled"] is True
-    assert baseline["Benchmark"]["RunLabel"] == "baseline-cache-disabled"
-    assert baseline["General"]["CareerChoiceCacheMode"] == "Disabled"
-    assert optimized["Profiling"]["Enabled"] is False
-    assert optimized["Benchmark"]["Enabled"] is True
-    assert optimized["Benchmark"]["RunLabel"] == "optimized-cache-enabled"
-    assert optimized["General"]["CareerChoiceCacheMode"] == "ShadowThenEnable"
+    on_load = submodule.split("protected override void OnSubModuleLoad()", 1)[1].split("protected override", 1)[0]
+    before_root = submodule.split("protected override void OnBeforeInitialModuleScreenSetAsRoot()", 1)[1].split("protected override", 1)[0]
+    assert "OptimizerRuntime.Initialize()" not in on_load
+    assert "OptimizerRuntime.Initialize()" in before_root
+    assert "OptimizerMcmSettings.Instance" in runtime
+    assert "BuildRuntimeSettings()" in runtime
+    assert "legacy fallback" in runtime
+    assert "Settings source: " in runtime
 
+    # Existing exact-gated optimization and teardown contracts remain intact.
     assert "TORCareerChoices" in optimization_targets
     assert "GetChoice" in optimization_targets
     assert "ExactResultPatchFactory.Create" in patches
@@ -145,7 +158,7 @@ def main() -> int:
     assert "optimizationHarmony.UnpatchAll(OptimizationOwner)" in harness
     assert "No test Harmony owner may remain after teardown" in harness
 
-    print("Milestone 3 benchmark, focused attribution, cache, and Harmony teardown gates passed.")
+    print("Milestone 3 MCM, benchmark, attribution, cache, and Harmony teardown gates passed.")
     return 0
 
 

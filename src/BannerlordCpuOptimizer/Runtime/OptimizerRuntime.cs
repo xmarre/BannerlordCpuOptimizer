@@ -37,8 +37,31 @@ namespace BannerlordCpuOptimizer.Runtime
                     return;
                 }
 
-                string settingsPath = PathProvider.ResolveSettingsPath();
-                _settings = SettingsLoader.LoadOrCreate(settingsPath);
+                string settingsSource;
+                Exception mcmFailure = null;
+                try
+                {
+                    OptimizerMcmSettings mcmSettings = OptimizerMcmSettings.Instance;
+                    if (mcmSettings != null)
+                    {
+                        _settings = mcmSettings.BuildRuntimeSettings();
+                        settingsSource = "MCM global settings (mode=" + mcmSettings.EffectiveRunMode + ")";
+                    }
+                    else
+                    {
+                        string settingsPath = PathProvider.ResolveSettingsPath();
+                        _settings = SettingsLoader.LoadOrCreate(settingsPath);
+                        settingsSource = settingsPath + " (legacy fallback because MCM settings were unavailable)";
+                    }
+                }
+                catch (Exception exception)
+                {
+                    mcmFailure = exception;
+                    string settingsPath = PathProvider.ResolveSettingsPath();
+                    _settings = SettingsLoader.LoadOrCreate(settingsPath);
+                    settingsSource = settingsPath + " (legacy fallback after MCM settings failure)";
+                }
+
                 _settings.Normalize();
                 OptimizerLog.Initialize(PathProvider.LogDirectory, _settings.Diagnostics.VerboseLogging);
                 EquivalenceValidator.IsEnabled = _settings.Diagnostics.ShadowValidation;
@@ -56,7 +79,15 @@ namespace BannerlordCpuOptimizer.Runtime
                 OptimizerLog.Info("BannerlordCpuOptimizer "
                     + (Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown")
                     + " loading.");
-                OptimizerLog.Info("Settings loaded from: " + settingsPath + ".");
+                OptimizerLog.Info("Settings source: " + settingsSource + ".");
+                if (mcmFailure != null)
+                {
+                    OptimizerLog.WriteExceptionOnce(
+                        "mcm-settings-load",
+                        "Could not load MCM settings; legacy JSON fallback was used",
+                        mcmFailure);
+                }
+
                 OptimizerLog.Info("Effective profiler configuration: enabled=" + _settings.Profiling.Enabled
                     + " focused=" + _settings.Profiling.ProfileFocusedTargets
                     + " torCampaign=" + _settings.Profiling.ProfileTorCampaignHandlers
@@ -142,6 +173,7 @@ namespace BannerlordCpuOptimizer.Runtime
 
         internal static void OnGameStarted()
         {
+            Initialize();
             lock (Sync)
             {
                 if (ProfilingEnabled && _session != null)
@@ -319,8 +351,8 @@ namespace BannerlordCpuOptimizer.Runtime
 
         private static void LogMilestoneState()
         {
-            OptimizerLog.Info("Milestone 3 mode: validated TOR career-choice cache, whole-process A/B benchmarking, and focused campaign attribution.");
-            OptimizerLog.Info("Active optimization boundary: TORCareerChoices.GetChoice reference cache only; the new Milestone 3 targets are observation-only until measured and proven equivalent.");
+            OptimizerLog.Info("Milestone 3 mode: validated TOR career-choice cache, whole-process A/B benchmarking, focused campaign attribution, and MCM configuration.");
+            OptimizerLog.Info("Active optimization boundary: TORCareerChoices.GetChoice reference cache only; the other Milestone 3 targets remain observation-only until measured and proven equivalent.");
             OptimizerLog.Info("Configured switches: vanilla=" + _settings.General.VanillaSafeOptimizations
                 + " torCampaign=" + _settings.General.TorCampaignOptimizations
                 + " torMission=" + _settings.General.TorMissionOptimizations
