@@ -33,7 +33,7 @@ jobs:
       - name: Verify release candidate contents
         shell: pwsh
         run: |
-          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.3.1-mcm.zip'
+          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.3.2-auto-benchmark.zip'
           $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
           try {
             $entries = $archive.Entries.FullName
@@ -53,9 +53,9 @@ jobs:
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: BannerlordCpuOptimizer-v0.3.1-mcm
+          name: BannerlordCpuOptimizer-v0.3.2-auto-benchmark
           path: |
-            artifacts/BannerlordCpuOptimizer-v0.3.1-mcm.zip
+            artifacts/BannerlordCpuOptimizer-v0.3.2-auto-benchmark.zip
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
