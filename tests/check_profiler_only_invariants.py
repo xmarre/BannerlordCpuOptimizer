@@ -21,12 +21,16 @@ def main() -> int:
     profiler = json.loads((MODULE_DATA / "settings.profiler.json").read_text(encoding="utf-8"))
     cache = read("Optimization/CareerChoiceCache.cs")
     patches = read("Optimization/CareerChoiceCachePatches.cs")
+    bridge = read("Optimization/CareerChoicePatchBridge.cs")
+    exact_factory = read("Optimization/ExactResultPatchFactory.cs")
     optimization_targets = read("Optimization/KnownOptimizationTargets.cs")
     runtime = read("Runtime/OptimizerRuntime.cs")
     frame = read("Profiling/FrameProfiler.cs")
     targets = read("Profiling/KnownProfilerTargets.cs")
     profiler_patches = read("Profiling/HarmonyProfilerPatches.cs")
     gate = read("Runtime/PatchGate.cs")
+    build = (ROOT / "build.ps1").read_text(encoding="utf-8")
+    harness = (ROOT / "tests" / "BannerlordCpuOptimizer.HarmonyTeardownHarness" / "Program.cs").read_text(encoding="utf-8")
 
     assert settings["Profiling"]["Enabled"] is False
     assert settings["General"]["ExperimentalNativePatches"] is False
@@ -43,12 +47,25 @@ def main() -> int:
 
     assert "TORCareerChoices" in optimization_targets
     assert "GetChoice" in optimization_targets
-    assert "TypedPatch<>" in patches
-    assert "ref TResult __result" in patches
-    assert "out CareerChoiceCallState __state" in patches
-    assert "return !served;" in patches
+    assert "ExactResultPatchFactory.Create" in patches
+    assert "typeof(CareerChoicePatchState)" in patches
+    assert "TypedPatch<" not in patches
+    assert "MakeGenericType" not in patches
     assert "PatchGate.ValidateTarget(target, specification, false" in patches
     assert "d43d63915c133164674d16f246e8d55afd0e165d322fd6ca2b3d5a9e6956d56d" in sources
+
+    assert "AssemblyBuilderAccess.Run" in exact_factory
+    assert "TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed" in exact_factory
+    assert "resultType.MakeByRefType()" in exact_factory
+    assert "stateType.MakeByRefType()" in exact_factory
+    assert 'DefineParameter(2, ParameterAttributes.None, "__result")' in exact_factory
+    assert 'DefineParameter(3, ParameterAttributes.Out, "__state")' in exact_factory
+    assert "OpCodes.Castclass, resultType" in exact_factory
+    assert "ContainsGenericParameters" in exact_factory
+    assert "public struct CareerChoicePatchState" in bridge
+    assert "internal CareerChoiceCallState Inner" in bridge
+    assert "out CareerChoicePatchState state" in bridge
+    assert "CareerChoiceCache.CompleteCall(id, result, state.Inner)" in bridge
 
     assert "ReferenceEquals(state.Expected, result)" in cache
     assert "ReferenceEquals(_campaignIdentity, currentCampaign)" in cache
@@ -67,7 +84,6 @@ def main() -> int:
     assert "TrackCampaignIdentity" in runtime
     assert "ReferenceEquals(_observedCampaign, currentCampaign)" in runtime
     assert runtime.index("currentCampaign != null") < runtime.index("_careerChoiceCachePatches?.Apply()")
-    assert "GameCampaign.Current, out object cached" in patches
     assert "HarmonyProfilerPatches.HarmonyId" in patches
     assert "another Harmony owner modifies" in patches
 
@@ -95,7 +111,13 @@ def main() -> int:
     assert "GetTotalWage" not in patches
     assert "AddCareerSpecificWagePerks" not in patches
 
-    print("Milestone 2 scoped-optimization invariant checks passed.")
+    assert "HarmonyTeardownHarness" in build
+    assert "profilerHarmony.UnpatchAll(ProfilerOwner)" in harness
+    assert "optimizationHarmony.UnpatchAll(OptimizationOwner)" in harness
+    assert "Prefix __result must use the exact by-reference return type" in harness
+    assert "No test Harmony owner may remain after teardown" in harness
+
+    print("Milestone 2 scoped-optimization and Harmony teardown invariant checks passed.")
     return 0
 
 
