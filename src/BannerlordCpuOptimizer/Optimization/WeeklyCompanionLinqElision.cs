@@ -19,15 +19,17 @@ namespace BannerlordCpuOptimizer.Optimization
                 return result;
             }
 
+            long visited = 0;
             foreach (T item in source)
             {
-                Interlocked.Increment(ref _itemsVisited);
+                visited++;
                 if (predicate == null || predicate(item))
                 {
                     result.Add(item);
                 }
             }
 
+            Interlocked.Add(ref _itemsVisited, visited);
             return result;
         }
 
@@ -39,15 +41,18 @@ namespace BannerlordCpuOptimizer.Optimization
                 return default(T);
             }
 
+            long visited = 0;
             foreach (T item in source)
             {
-                Interlocked.Increment(ref _itemsVisited);
+                visited++;
                 if (predicate == null || predicate(item))
                 {
+                    Interlocked.Add(ref _itemsVisited, visited);
                     return item;
                 }
             }
 
+            Interlocked.Add(ref _itemsVisited, visited);
             return default(T);
         }
 
