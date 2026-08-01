@@ -2,102 +2,85 @@
 
 ## Purpose
 
-Milestone 1 establishes where managed CPU time and allocations occur. It does not modify gameplay logic.
+Milestone 1 established the initial managed CPU and allocation profile. Milestone 2 uses a focused profiler to validate the measured career-choice optimization with substantially less instrumentation overhead.
 
 ## Configuration
 
-The active configuration is:
+The active packaged configuration is:
 
 ```text
 Modules\BannerlordCpuOptimizer\ModuleData\BannerlordCpuOptimizer\settings.json
 ```
 
-Set `Profiling.Enabled` to `true`. `settings.profiler.json` is an enabled template that can be copied over `settings.json`.
+`settings.profiler.json` is the focused enabled template. Copy it over `settings.json` for the Milestone 2 validation run. It enables only:
 
-The packaged settings file is authoritative when present. If it is missing, the module falls back to:
+- `TORCareerChoices.GetChoice`
+- `CareerHelper.CalculateTroopWageCareerPerkEffect`
+- `TORCommon.FindSettlementsAroundPosition`
+
+Broad TOR campaign, mission, model, and vanilla profiling are disabled in the template. `RuntimeOverlay` remains disabled.
+
+The packaged file is authoritative when present. Its fallback is:
 
 ```text
 Documents\Mount and Blade II Bannerlord\Configs\BannerlordCpuOptimizer\settings.json
 ```
 
-The startup log prints `Settings loaded from:` and `Effective profiler configuration:` so the active file and effective flags can be verified directly.
+Startup logs print the selected path, effective profiler flags, and effective cache-validation settings.
 
-## Baseline procedure
+## Focused 200-hour procedure
 
-Use the same module list, save, graphics settings, battle size, camera route, campaign speed, and test duration for every comparison.
+Use the same module list, save, graphics settings, camera route, campaign speed, and approximate real-time duration used for the original 200-hour profile.
 
-1. Keep `Profiling.Enabled=false` and collect an external baseline.
-2. Enable profiling with `RuntimeOverlay=false`; repeat the identical scenario.
-3. Enable the overlay only for diagnostic use, not final overhead or performance measurements.
-4. Compare profiler-off and profiler-on frame-time p50/p95/p99, CPU use, campaign-hours-per-minute, and GC counts.
-5. Reject or increase sampling for any target whose instrumentation materially changes the scenario.
-6. Use WPR/WPA or another external sampler to determine whether native engine time or managed code dominates.
+1. Install v0.2.0 cleanly.
+2. Copy `settings.profiler.json` over `settings.json`.
+3. Load the same campaign save.
+4. Run 200 campaign hours with the same map route and speed behavior.
+5. Include one representative battle so mission counting is exercised.
+6. Save and reload once.
+7. Continue after reload until the cache reports another shadow promotion.
+8. Exit normally so every report is finalized.
+9. Repeat the route with profiling disabled for the final performance comparison.
 
-The profiler records exact call counts. Timing and allocation are sampled. The report labels sampled totals and call-count-scaled estimates separately.
+A valid focused run requires:
 
-## Recommended sessions
+- zero cache mismatches;
+- no disabled/fallback reason;
+- at least one independently validated ID;
+- at least one promotion per campaign instance;
+- active cache hits after promotion;
+- mission count greater than zero when a mission occurred;
+- periodic audits during a sufficiently long run.
 
-### Campaign map
+The profiler records exact call counts. Timing and allocation are sampled. Call-count-scaled estimates remain estimates and must be interpreted alongside profiler-off measurements.
 
-- Early campaign, 1× speed, stationary camera, 5 minutes.
-- Late campaign, maximum speed, zoomed out, 5 minutes.
-- Late campaign, continuous camera movement and zoom changes, 5 minutes.
-- TOR resource-heavy faction with Waaagh/resource UI visible.
-- Settlement ownership change and selected/inspected party changes.
-- Save/load and repeated load/save cycles.
+## Cache report interpretation
 
-### Battle
+The JSON report and `-optimization.csv` include:
 
-- 200-agent field battle.
-- 500-agent field battle.
-- Maximum practical battle size.
-- Missile-heavy battle.
-- Cavalry-heavy battle.
-- Siege attack and defence.
-- TOR spell-heavy battle with multiple simultaneous effects.
-- Reinforcement waves and mission restart cycles.
+- configured mode and current runtime state;
+- campaign binding and session generation;
+- cached and independently validated IDs;
+- calls, active hits, misses, and stores;
+- reference-identical shadow comparisons;
+- per-ID validations;
+- mismatches and unexpected null results;
+- promotions and original-call audits;
+- fallback reason.
 
-## Report interpretation
+A cache hit is possible only after the global shadow threshold and the individual ID validation have both completed.
 
-Prioritize methods that satisfy at least one initial gate:
+## Context metrics
 
-```text
->= 0.2 ms in a relevant frame
-or
->= 5% of measured managed workload in the scenario
-```
+`EnableOptionalContextMetrics` controls reflection-based optional metrics such as map zoom. It is independent of `AllowUnknownProfilerTargets`.
 
-Also require that a prospective optimization does not worsen p95/p99 frame time or move work into a different frame.
-
-High call count alone is insufficient. A tiny method may appear frequently and remain irrelevant. A large model method may be expensive per call and still be irrelevant if called once per day.
-
-### Allocation values
-
-`GetAllocatedBytesForCurrentThread` is resolved by reflection. When unavailable, allocation fields remain zero and `AllocationCounterAvailable=false` is written to JSON. Allocation deltas include allocations made by the profiled method and nested calls on the same thread during the sample.
-
-### Context values
-
-Some context fields are optional and may be `-1`/null:
-
-- map zoom depends on the loaded SandBox view implementation;
-- missile collections vary by game version;
-- active spell/effect count depends on TOR field availability;
-- campaign speed and battle type are read from available runtime members.
-
-Missing optional metrics do not disable method profiling.
+Missing optional metrics do not affect method profiling or optimization gates.
 
 ## Fail-closed behavior
 
-A profiler target is skipped when:
+Profiler targets are skipped when their assembly is absent, their signature or IL changed, the module MVID is unknown without explicit profiler permission, or Harmony patching fails. A profiler exception disables only that profiler record.
 
-- its assembly is absent;
-- its MVID is unknown and unknown profiler targets are not explicitly allowed;
-- its declaring type, method, parameter, or return type changed;
-- a known IL fingerprint changed;
-- the method has no managed body;
-- Harmony patching throws.
-
-A profiling prefix/postfix that throws disables only that method's profiler record and logs one error. The original method is never skipped.
+The active optimization has a stricter policy. It never allows unknown modules. It is refused when the MVID, signature, or IL fingerprint differs, and when another Harmony owner already modifies the target. Runtime mismatches clear and disable the cache for that campaign while preserving the original TOR method.
 
 ## Output
 
@@ -110,5 +93,6 @@ Files:
 - `...Profile-<session>.json`
 - `...Profile-<session>-methods.csv`
 - `...Profile-<session>-context.csv`
+- `...Profile-<session>-optimization.csv`
 
 A session is finalized on game end or module unload.
