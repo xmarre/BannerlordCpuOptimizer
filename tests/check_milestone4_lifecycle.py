@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src" / "BannerlordCpuOptimizer"
+
+runtime = (SRC / "Runtime" / "OptimizerRuntime.cs").read_text(encoding="utf-8")
+map_engine = (SRC / "Optimization" / "MapVisibilityEarlyExit.cs").read_text(encoding="utf-8")
+map_patch = (SRC / "Optimization" / "MapVisibilityOptimizationPatches.cs").read_text(encoding="utf-8")
+weekly = (SRC / "Optimization" / "WeeklyCompanionLinqElision.cs").read_text(encoding="utf-8")
+
+# Initial campaign start and in-process Campaign.Current replacement must both reset
+# every campaign-sensitive validation/counter set.
+assert runtime.count("ResetCampaignOptimizationValidation();") == 2
+reset_body = runtime.split("private static void ResetCampaignOptimizationValidation()", 1)[1].split("private static void StartSession()", 1)[0]
+assert "MapVisibilityEarlyExit.ResetSession();" in reset_body
+assert "RaceLookupCache.ResetSession();" in reset_body
+assert "WeeklyCompanionLinqElision.Reset();" in reset_body
+
+# A successful unpatch releases the original delegate. A failed unpatch leaves the
+# replacement disabled but retains the original delegate as a behavior-preserving fallback.
+assert "bool unpatched = false;" in map_patch
+assert "unpatched = true;" in map_patch
+assert "MapVisibilityEarlyExit.Clear(unpatched);" in map_patch
+clear_body = map_engine.split("internal static void Clear(bool releaseOriginal)", 1)[1].split("public static bool AnySettlementAroundPosition", 1)[0]
+assert "if (releaseOriginal)" in clear_body
+assert "_original = null;" in clear_body
+fallback_body = map_engine.split("if (!_enabled || original == null)", 1)[1].split("long call", 1)[0]
+assert "original(position, radius, predicate).Count > 0" in fallback_body
+
+# Weekly result materialization may pre-size from ICollection<T>, but must not
+# enumerate early, change ordering, or introduce per-item atomics.
+assert "ICollection<T> collection = source as ICollection<T>;" in weekly
+assert "new List<T>(collection.Count)" in weekly
+loop_body = weekly.split("foreach (T item in source)", 1)[1].split("Interlocked.Add(ref _itemsVisited, visited);", 1)[0]
+assert "Interlocked." not in loop_body
+
+print("Milestone 4 lifecycle, fallback, and weekly allocation gates passed.")
