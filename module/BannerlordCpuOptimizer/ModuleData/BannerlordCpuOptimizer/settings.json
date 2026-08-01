@@ -31,5 +31,10 @@
     "RuntimeOverlay": false,
     "VerboseLogging": false,
     "LogHarmonyConflicts": true
+  },
+  "Benchmark": {
+    "Enabled": false,
+    "RunLabel": "optimized",
+    "ReportFormat": "Both"
   }
 }
