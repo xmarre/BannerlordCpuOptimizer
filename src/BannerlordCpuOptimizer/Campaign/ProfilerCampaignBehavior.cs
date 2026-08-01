@@ -13,12 +13,16 @@ namespace BannerlordCpuOptimizer.Campaign
 
         public override void SyncData(IDataStore dataStore)
         {
-            // Profiler state is intentionally never serialized.
+            // Measurement state is intentionally never serialized.
         }
 
         private static void OnHourlyTick()
         {
-            FrameProfiler.CampaignHourElapsed();
+            if (OptimizerRuntime.ProfilingEnabled)
+            {
+                FrameProfiler.CampaignHourElapsed();
+            }
+            OptimizerRuntime.OnCampaignHourElapsed();
         }
     }
 }
