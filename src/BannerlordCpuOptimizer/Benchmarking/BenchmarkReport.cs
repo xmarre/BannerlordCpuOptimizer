@@ -19,7 +19,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
         [DataMember(Order = 11)] public double ProcessCpuSeconds { get; set; }
         [DataMember(Order = 12)] public double ProcessCpuPercentOfOneLogicalCore { get; set; }
         [DataMember(Order = 13)] public double ProcessCpuPercentOfWholeMachine { get; set; }
-        [DataMember(Order = 14)] public long RenderedFrames { get; set; }
+        [DataMember(Order = 14)] public long ApplicationTicks { get; set; }
         [DataMember(Order = 15)] public double ApplicationTicksPerSecond { get; set; }
         [DataMember(Order = 16)] public double AverageFrameMilliseconds { get; set; }
         [DataMember(Order = 17)] public double P50FrameMilliseconds { get; set; }
@@ -39,5 +39,6 @@ namespace BannerlordCpuOptimizer.Benchmarking
         [DataMember(Order = 31)] public string Notes { get; set; }
         [DataMember(Order = 32)] public double ProcessCpuSecondsPerCampaignHour { get; set; }
         [DataMember(Order = 33)] public double WallSecondsPerCampaignHour { get; set; }
+        [DataMember(Order = 34)] public bool ProcessCpuMeasurementAvailable { get; set; }
     }
 }
