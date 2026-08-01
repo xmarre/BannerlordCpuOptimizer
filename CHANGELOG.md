@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1 - Harmony teardown fix
+
+- Replaced the unsupported generic Harmony patch class with a non-generic runtime-emitted patch type.
+- Emitted the exact TOR `CareerChoiceObject` return type for prefix and postfix `__result` parameters.
+- Fixed profiler and optimization unpatch failures under runtime Harmony 2.4.2.
+- Preserved the allocation-free struct state path and the existing cache algorithm, shadow threshold, audit cadence, target fingerprint, and lifecycle boundaries.
+- Added an executable Harmony 2.4.2 integration harness covering cache operation, profiler removal, optimization removal, original-method restoration, and final owner cleanup.
+- Recorded a successful focused validation session with 1,117,589 cache calls, 1,116,160 active hits, 49 of 49 IDs validated, 1,091 audits, zero mismatches, zero null-result changes, one promotion, and one correctly counted mission.
+- Retained save/load campaign-identity transition testing as a separate runtime check because the submitted session contained one campaign cache generation.
+
 ## 0.2.0 - Measured TOR wage-path optimization
 
 - Added a strictly MVID/signature/IL-gated cache for `TORCareerChoices.GetChoice(string)`.

@@ -4,6 +4,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BannerlordCpuOptimizer", "src\BannerlordCpuOptimizer\BannerlordCpuOptimizer.csproj", "{4EB136D0-6B93-40D4-B93C-6D2DCC2194AA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BannerlordCpuOptimizer.HarmonyTeardownHarness", "tests\BannerlordCpuOptimizer.HarmonyTeardownHarness\BannerlordCpuOptimizer.HarmonyTeardownHarness.csproj", "{1DCC7AB3-F899-4A7C-9C88-12AB2B3627FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,5 +16,9 @@ Global
 		{4EB136D0-6B93-40D4-B93C-6D2DCC2194AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EB136D0-6B93-40D4-B93C-6D2DCC2194AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EB136D0-6B93-40D4-B93C-6D2DCC2194AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DCC7AB3-F899-4A7C-9C88-12AB2B3627FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DCC7AB3-F899-4A7C-9C88-12AB2B3627FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DCC7AB3-F899-4A7C-9C88-12AB2B3627FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DCC7AB3-F899-4A7C-9C88-12AB2B3627FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
