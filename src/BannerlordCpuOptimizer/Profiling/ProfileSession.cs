@@ -57,7 +57,10 @@ namespace BannerlordCpuOptimizer.Profiling
                 Methods = MethodProfiler.Snapshot(frames, campaignHours, missions).ToList(),
                 Context = FrameProfiler.SnapshotContexts().ToList(),
                 CareerChoiceCache = CareerChoiceCache.Snapshot(),
-                Notes = "Milestone 2 focused build. The only active optimization is the strictly fingerprinted TOR career-choice lookup cache. It starts every campaign in reference-identity shadow mode and clears on every game lifecycle boundary."
+                MapVisibilityOptimization = MapVisibilityEarlyExit.Describe(),
+                RaceLookupOptimization = RaceLookupCache.Describe(),
+                WeeklyCompanionOptimization = WeeklyCompanionLinqElision.Describe(),
+                Notes = "Milestone 4 focused build. Active TOR campaign optimizations are exact-build gated, refuse foreign Harmony owners, preserve original behavior during validation, audit active caches, and clear on teardown. Hit-point final values are never cached."
             };
         }
     }

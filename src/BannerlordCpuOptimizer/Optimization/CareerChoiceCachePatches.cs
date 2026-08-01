@@ -15,27 +15,45 @@ namespace BannerlordCpuOptimizer.Optimization
 
         private readonly Harmony _harmony = new Harmony(HarmonyId);
         private readonly OptimizerSettings _settings;
+        private readonly MapVisibilityOptimizationPatches _mapVisibility;
+        private readonly RaceLookupOptimizationPatches _raceLookup;
+        private readonly WeeklyCompanionOptimizationPatches _weeklyCompanions;
         private MethodBase _target;
         private Type _patchType;
         private MethodInfo _prefixMethod;
         private MethodInfo _postfixMethod;
+        private bool _campaignOptimizationsApplied;
 
         internal CareerChoiceCachePatches(OptimizerSettings settings)
         {
             _settings = settings;
+            _mapVisibility = new MapVisibilityOptimizationPatches(settings);
+            _raceLookup = new RaceLookupOptimizationPatches(settings);
+            _weeklyCompanions = new WeeklyCompanionOptimizationPatches(settings);
+
+            MapVisibilityEarlyExit.Configure(
+                settings.General.MapVisibilityEarlyExit,
+                settings.General.MapVisibilityShadowComparisons,
+                settings.General.MapVisibilityAuditEvery);
+            RaceLookupCache.Configure(
+                settings.General.RaceLookupCache,
+                settings.General.RaceLookupShadowComparisons,
+                settings.General.RaceLookupAuditEvery);
+            WeeklyCompanionLinqElision.Reset();
         }
 
         internal int Apply()
         {
+            int applied = ApplyCampaignOptimizations();
             if (_target != null)
             {
-                return 1;
+                return applied + 1;
             }
 
             if (!_settings.General.TorCampaignOptimizations || !CareerChoiceCache.IsConfigured)
             {
                 OptimizerLog.Info("Career-choice cache patch is disabled by configuration.");
-                return 0;
+                return applied;
             }
 
             ProfilerTargetSpec specification = KnownOptimizationTargets.CareerChoiceGetChoice();
@@ -47,7 +65,7 @@ namespace BannerlordCpuOptimizer.Optimization
                     "ERROR",
                     "Career-choice cache patch was not applied: " + reason
                         + ". Original TOR behavior will continue.");
-                return 0;
+                return applied;
             }
 
             MethodInfo targetMethod = target as MethodInfo;
@@ -57,14 +75,14 @@ namespace BannerlordCpuOptimizer.Optimization
                     "career-choice-cache-return",
                     "ERROR",
                     "Career-choice cache patch requires a reference-type result. Original TOR behavior will continue.");
-                return 0;
+                return applied;
             }
 
             try
             {
                 if (!ValidateForeignPatches(target))
                 {
-                    return 0;
+                    return applied;
                 }
 
                 MethodInfo beginBridge = typeof(CareerChoicePatchBridge).GetMethod(
@@ -89,7 +107,7 @@ namespace BannerlordCpuOptimizer.Optimization
                 _target = target;
                 OptimizerLog.Info("Career-choice cache patch attached after campaign startup: "
                     + ProfilerTargetSpec.FormatSignature(target) + ".");
-                return 1;
+                return applied + 1;
             }
             catch (Exception exception)
             {
@@ -97,12 +115,37 @@ namespace BannerlordCpuOptimizer.Optimization
                     "career-choice-cache-patch",
                     "Career-choice cache patch failed; original TOR behavior will continue",
                     exception);
-                Remove();
-                return 0;
+                RemoveCareerChoiceOnly();
+                return applied;
             }
         }
 
         internal void Remove()
+        {
+            RemoveCareerChoiceOnly();
+            _weeklyCompanions.Remove();
+            _raceLookup.Remove();
+            _mapVisibility.Remove();
+            _campaignOptimizationsApplied = false;
+        }
+
+        private int ApplyCampaignOptimizations()
+        {
+            if (_campaignOptimizationsApplied)
+            {
+                return 0;
+            }
+
+            _campaignOptimizationsApplied = true;
+            int applied = 0;
+            applied += _mapVisibility.Apply();
+            applied += _raceLookup.Apply();
+            applied += _weeklyCompanions.Apply();
+            OptimizerLog.Info("Milestone 4 TOR campaign optimization patch count: " + applied + ".");
+            return applied;
+        }
+
+        private void RemoveCareerChoiceOnly()
         {
             try
             {

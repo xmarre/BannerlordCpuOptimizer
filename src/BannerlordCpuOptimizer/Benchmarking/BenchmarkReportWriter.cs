@@ -51,7 +51,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
             string temporary = path + ".tmp";
             using (var writer = new StreamWriter(temporary, false, new UTF8Encoding(false)))
             {
-                writer.WriteLine("session_id,run_label,completion_reason,optimizer_version,profiling_enabled,career_choice_cache_mode,logical_processors,process_cpu_measurement_available,wall_seconds,process_cpu_seconds,process_cpu_seconds_per_campaign_hour,wall_seconds_per_campaign_hour,cpu_percent_one_logical_core,cpu_percent_whole_machine,application_ticks,application_ticks_per_second,average_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,max_frame_ms,campaign_hours,campaign_hours_per_real_minute,missions,gen0,gen1,gen2,managed_bytes_start,managed_bytes_end,managed_bytes_delta,cache_runtime_state,cache_calls,cache_active_hits,cache_mismatches,cache_promotions,cache_disabled_reason");
+                writer.WriteLine("session_id,run_label,completion_reason,optimizer_version,profiling_enabled,career_choice_cache_mode,logical_processors,process_cpu_measurement_available,wall_seconds,process_cpu_seconds,process_cpu_seconds_per_campaign_hour,wall_seconds_per_campaign_hour,cpu_percent_one_logical_core,cpu_percent_whole_machine,application_ticks,application_ticks_per_second,average_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,max_frame_ms,campaign_hours,campaign_hours_per_real_minute,missions,gen0,gen1,gen2,managed_bytes_start,managed_bytes_end,managed_bytes_delta,cache_runtime_state,cache_calls,cache_active_hits,cache_mismatches,cache_promotions,cache_disabled_reason,map_visibility_optimization,race_lookup_optimization,weekly_companion_optimization");
                 var cache = report.CareerChoiceCache;
                 writer.WriteLine(string.Join(",", new[]
                 {
@@ -70,7 +70,10 @@ namespace BannerlordCpuOptimizer.Benchmarking
                     (cache == null ? 0L : cache.ActiveHits).ToString(CultureInfo.InvariantCulture),
                     (cache == null ? 0L : cache.Mismatches).ToString(CultureInfo.InvariantCulture),
                     (cache == null ? 0L : cache.Promotions).ToString(CultureInfo.InvariantCulture),
-                    Csv(cache == null ? null : cache.DisabledReason)
+                    Csv(cache == null ? null : cache.DisabledReason),
+                    Csv(report.MapVisibilityOptimization),
+                    Csv(report.RaceLookupOptimization),
+                    Csv(report.WeeklyCompanionOptimization)
                 }));
             }
             Replace(temporary, path);

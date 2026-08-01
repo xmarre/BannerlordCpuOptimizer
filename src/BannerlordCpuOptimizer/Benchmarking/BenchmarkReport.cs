@@ -36,9 +36,12 @@ namespace BannerlordCpuOptimizer.Benchmarking
         [DataMember(Order = 28)] public long ManagedBytesEnd { get; set; }
         [DataMember(Order = 29)] public long ManagedBytesDelta { get; set; }
         [DataMember(Order = 30)] public CareerChoiceCacheSnapshot CareerChoiceCache { get; set; }
-        [DataMember(Order = 31)] public string Notes { get; set; }
-        [DataMember(Order = 32)] public double ProcessCpuSecondsPerCampaignHour { get; set; }
-        [DataMember(Order = 33)] public double WallSecondsPerCampaignHour { get; set; }
-        [DataMember(Order = 34)] public bool ProcessCpuMeasurementAvailable { get; set; }
+        [DataMember(Order = 31)] public string MapVisibilityOptimization { get; set; }
+        [DataMember(Order = 32)] public string RaceLookupOptimization { get; set; }
+        [DataMember(Order = 33)] public string WeeklyCompanionOptimization { get; set; }
+        [DataMember(Order = 34)] public string Notes { get; set; }
+        [DataMember(Order = 35)] public double ProcessCpuSecondsPerCampaignHour { get; set; }
+        [DataMember(Order = 36)] public double WallSecondsPerCampaignHour { get; set; }
+        [DataMember(Order = 37)] public bool ProcessCpuMeasurementAvailable { get; set; }
     }
 }

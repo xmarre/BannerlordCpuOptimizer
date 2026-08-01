@@ -32,6 +32,10 @@ namespace BannerlordCpuOptimizer.Configuration
             General.CareerChoiceShadowComparisons = Clamp(General.CareerChoiceShadowComparisons, 1, 1000000);
             General.CareerChoiceMinimumDistinctIds = Clamp(General.CareerChoiceMinimumDistinctIds, 1, 10000);
             General.CareerChoiceAuditEvery = Clamp(General.CareerChoiceAuditEvery, 1, 1000000);
+            General.MapVisibilityShadowComparisons = Clamp(General.MapVisibilityShadowComparisons, 1, 1000000);
+            General.MapVisibilityAuditEvery = Clamp(General.MapVisibilityAuditEvery, 1, 1000000);
+            General.RaceLookupShadowComparisons = Clamp(General.RaceLookupShadowComparisons, 1, 1000000);
+            General.RaceLookupAuditEvery = Clamp(General.RaceLookupAuditEvery, 1, 1000000);
             if (!IsCareerChoiceMode(General.CareerChoiceCacheMode))
             {
                 General.CareerChoiceCacheMode = "ShadowThenEnable";
@@ -90,6 +94,13 @@ namespace BannerlordCpuOptimizer.Configuration
         [DataMember(Order = 8)] public int CareerChoiceShadowComparisons { get; set; } = 256;
         [DataMember(Order = 9)] public int CareerChoiceMinimumDistinctIds { get; set; } = 1;
         [DataMember(Order = 10)] public int CareerChoiceAuditEvery { get; set; } = 1024;
+        [DataMember(Order = 11)] public bool MapVisibilityEarlyExit { get; set; } = true;
+        [DataMember(Order = 12)] public int MapVisibilityShadowComparisons { get; set; } = 512;
+        [DataMember(Order = 13)] public int MapVisibilityAuditEvery { get; set; } = 2048;
+        [DataMember(Order = 14)] public bool RaceLookupCache { get; set; } = true;
+        [DataMember(Order = 15)] public int RaceLookupShadowComparisons { get; set; } = 256;
+        [DataMember(Order = 16)] public int RaceLookupAuditEvery { get; set; } = 4096;
+        [DataMember(Order = 17)] public bool WeeklyCompanionLinqElision { get; set; } = true;
 
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
@@ -104,6 +115,13 @@ namespace BannerlordCpuOptimizer.Configuration
             CareerChoiceShadowComparisons = 256;
             CareerChoiceMinimumDistinctIds = 1;
             CareerChoiceAuditEvery = 1024;
+            MapVisibilityEarlyExit = true;
+            MapVisibilityShadowComparisons = 512;
+            MapVisibilityAuditEvery = 2048;
+            RaceLookupCache = true;
+            RaceLookupShadowComparisons = 256;
+            RaceLookupAuditEvery = 4096;
+            WeeklyCompanionLinqElision = true;
         }
     }
 

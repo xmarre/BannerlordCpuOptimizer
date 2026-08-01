@@ -48,7 +48,7 @@ namespace BannerlordCpuOptimizer.Configuration
             "Operating Mode",
             Order = 0,
             RequireRestart = true,
-            HintText = "Normal Gameplay uses the validated optimization without measurement overhead. Benchmark modes configure a clean baseline or optimized A/B run automatically. Focused Profiler enables method attribution. Custom uses the detailed switches below.")]
+            HintText = "Normal Gameplay uses the selected validated optimizations without measurement overhead. Baseline disables every optimizer patch. Optimized enables every released safe patch. Focused Profiler enables attribution and the released optimizations.")]
         [SettingPropertyGroup("Run Mode", GroupOrder = 0)]
         public Dropdown<string> RunMode { get; set; } = new Dropdown<string>(RunModes, 0);
 
@@ -56,15 +56,11 @@ namespace BannerlordCpuOptimizer.Configuration
             "Custom Run Label",
             Order = 1,
             RequireRestart = true,
-            HintText = "Used for Custom benchmark reports and Focused Profiler reports. Baseline and Optimized benchmark modes use fixed comparison-safe labels.")]
+            HintText = "Used for Custom and Focused Profiler reports. Baseline and Optimized use fixed comparison-safe labels.")]
         [SettingPropertyGroup("Run Mode", GroupOrder = 0)]
         public string CustomRunLabel { get; set; } = "custom";
 
-        [SettingPropertyBool(
-            "Enable Benchmark in Custom Mode",
-            Order = 2,
-            RequireRestart = true,
-            HintText = "Only used when Operating Mode is Custom.")]
+        [SettingPropertyBool("Enable Benchmark in Custom Mode", Order = 2, RequireRestart = true)]
         [SettingPropertyGroup("Run Mode", GroupOrder = 0)]
         public bool CustomBenchmarkEnabled { get; set; }
 
@@ -72,15 +68,11 @@ namespace BannerlordCpuOptimizer.Configuration
             "Enable Profiler in Custom Mode",
             Order = 3,
             RequireRestart = true,
-            HintText = "Only used when Operating Mode is Custom. Profiling adds measurement overhead and should remain disabled during A/B benchmarks.")]
+            HintText = "Profiling adds overhead and must remain disabled during A/B benchmarks.")]
         [SettingPropertyGroup("Run Mode", GroupOrder = 0)]
         public bool CustomProfilerEnabled { get; set; }
 
-        [SettingPropertyDropdown(
-            "Benchmark Report Format",
-            Order = 4,
-            RequireRestart = true,
-            HintText = "Both writes JSON and CSV. The comparison utility uses JSON reports.")]
+        [SettingPropertyDropdown("Benchmark Report Format", Order = 4, RequireRestart = true)]
         [SettingPropertyGroup("Run Mode", GroupOrder = 0)]
         public Dropdown<string> BenchmarkReportFormat { get; set; } = new Dropdown<string>(ReportFormats, 0);
 
@@ -104,7 +96,7 @@ namespace BannerlordCpuOptimizer.Configuration
             "Experimental Native Patches",
             Order = 4,
             RequireRestart = true,
-            HintText = "Keep disabled. No experimental native optimization is currently released.")]
+            HintText = "Keep disabled. No experimental native patch is released.")]
         [SettingPropertyGroup("Optimization\\Feature Gates", GroupOrder = 1)]
         public bool ExperimentalNativePatches { get; set; }
 
@@ -112,7 +104,7 @@ namespace BannerlordCpuOptimizer.Configuration
             "Automatic Fallback",
             Order = 5,
             RequireRestart = true,
-            HintText = "Keep enabled so any validation failure immediately returns to original game or TOR behavior.")]
+            HintText = "Keep enabled. Any validation mismatch returns immediately to original Bannerlord or TOR behavior.")]
         [SettingPropertyGroup("Optimization\\Feature Gates", GroupOrder = 1)]
         public bool AutomaticFallback { get; set; } = true;
 
@@ -120,39 +112,61 @@ namespace BannerlordCpuOptimizer.Configuration
             "Career-Choice Cache Mode",
             Order = 0,
             RequireRestart = true,
-            HintText = "Normal and Custom modes use this value. Benchmark - Baseline forces Disabled; Benchmark - Optimized and Focused Profiler force ShadowThenEnable.")]
+            HintText = "Baseline forces Disabled. Optimized and Focused Profiler force ShadowThenEnable.")]
         [SettingPropertyGroup("Optimization\\Career-Choice Cache", GroupOrder = 1)]
         public Dropdown<string> CareerChoiceCacheMode { get; set; } = new Dropdown<string>(CacheModes, 2);
 
-        [SettingPropertyInteger(
-            "Shadow Comparisons Before Activation",
-            1,
-            1000000,
-            Order = 1,
-            RequireRestart = true,
-            HintText = "Number of reference-identical original results required before the cache may serve validated IDs.")]
+        [SettingPropertyInteger("Shadow Comparisons Before Activation", 1, 1000000, Order = 1, RequireRestart = true)]
         [SettingPropertyGroup("Optimization\\Career-Choice Cache", GroupOrder = 1)]
         public int CareerChoiceShadowComparisons { get; set; } = 256;
 
-        [SettingPropertyInteger(
-            "Minimum Distinct IDs",
-            1,
-            10000,
-            Order = 2,
-            RequireRestart = true,
-            HintText = "Minimum number of individually validated career-choice IDs required before activation.")]
+        [SettingPropertyInteger("Minimum Distinct IDs", 1, 10000, Order = 2, RequireRestart = true)]
         [SettingPropertyGroup("Optimization\\Career-Choice Cache", GroupOrder = 1)]
         public int CareerChoiceMinimumDistinctIds { get; set; } = 1;
 
-        [SettingPropertyInteger(
-            "Audit Every N Cache Hits",
-            1,
-            1000000,
-            Order = 3,
-            RequireRestart = true,
-            HintText = "One validated hit candidate in every N is checked through TOR's original method.")]
+        [SettingPropertyInteger("Audit Every N Cache Hits", 1, 1000000, Order = 3, RequireRestart = true)]
         [SettingPropertyGroup("Optimization\\Career-Choice Cache", GroupOrder = 1)]
         public int CareerChoiceAuditEvery { get; set; } = 1024;
+
+        [SettingPropertyBool(
+            "Map Visibility Early Exit",
+            Order = 0,
+            RequireRestart = true,
+            HintText = "Replaces TOR's temporary nearby-settlement list with an exact early-exit existence check after shadow validation.")]
+        [SettingPropertyGroup("Optimization\\TOR Campaign", GroupOrder = 1)]
+        public bool MapVisibilityEarlyExit { get; set; } = true;
+
+        [SettingPropertyInteger("Visibility Shadow Comparisons", 1, 1000000, Order = 1, RequireRestart = true)]
+        [SettingPropertyGroup("Optimization\\TOR Campaign", GroupOrder = 1)]
+        public int MapVisibilityShadowComparisons { get; set; } = 512;
+
+        [SettingPropertyInteger("Visibility Audit Every N Calls", 1, 1000000, Order = 2, RequireRestart = true)]
+        [SettingPropertyGroup("Optimization\\TOR Campaign", GroupOrder = 1)]
+        public int MapVisibilityAuditEvery { get; set; } = 2048;
+
+        [SettingPropertyBool(
+            "Fixed Race Lookup Cache",
+            Order = 3,
+            RequireRestart = true,
+            HintText = "Caches only exact TOR fixed race-ID lookups used by health and race classification. Final hit-point values are never cached.")]
+        [SettingPropertyGroup("Optimization\\TOR Campaign", GroupOrder = 1)]
+        public bool RaceLookupCache { get; set; } = true;
+
+        [SettingPropertyInteger("Race Lookup Shadow Comparisons", 1, 1000000, Order = 4, RequireRestart = true)]
+        [SettingPropertyGroup("Optimization\\TOR Campaign", GroupOrder = 1)]
+        public int RaceLookupShadowComparisons { get; set; } = 256;
+
+        [SettingPropertyInteger("Race Lookup Audit Every N Hits", 1, 1000000, Order = 5, RequireRestart = true)]
+        [SettingPropertyGroup("Optimization\\TOR Campaign", GroupOrder = 1)]
+        public int RaceLookupAuditEvery { get; set; } = 4096;
+
+        [SettingPropertyBool(
+            "Weekly Companion LINQ Elision",
+            Order = 6,
+            RequireRestart = true,
+            HintText = "Preserves TOR's weekly schedule, ordering, predicates, randomization, and side effects while removing two temporary iterator chains.")]
+        [SettingPropertyGroup("Optimization\\TOR Campaign", GroupOrder = 1)]
+        public bool WeeklyCompanionLinqElision { get; set; } = true;
 
         [SettingPropertyBool("Profile Focused Targets", Order = 0, RequireRestart = true)]
         [SettingPropertyGroup("Profiler\\Targets", GroupOrder = 2)]
@@ -198,7 +212,7 @@ namespace BannerlordCpuOptimizer.Configuration
             "Allow Unknown Profiler Targets",
             Order = 5,
             RequireRestart = true,
-            HintText = "Unsafe for normal use. Allows observation-only profiling on an unknown assembly build, but never relaxes optimization gates.")]
+            HintText = "Observation only. Never relaxes optimization gates.")]
         [SettingPropertyGroup("Profiler\\Advanced", GroupOrder = 2)]
         public bool AllowUnknownProfilerTargets { get; set; }
 
@@ -238,6 +252,13 @@ namespace BannerlordCpuOptimizer.Configuration
             settings.General.CareerChoiceShadowComparisons = CareerChoiceShadowComparisons;
             settings.General.CareerChoiceMinimumDistinctIds = CareerChoiceMinimumDistinctIds;
             settings.General.CareerChoiceAuditEvery = CareerChoiceAuditEvery;
+            settings.General.MapVisibilityEarlyExit = MapVisibilityEarlyExit;
+            settings.General.MapVisibilityShadowComparisons = MapVisibilityShadowComparisons;
+            settings.General.MapVisibilityAuditEvery = MapVisibilityAuditEvery;
+            settings.General.RaceLookupCache = RaceLookupCache;
+            settings.General.RaceLookupShadowComparisons = RaceLookupShadowComparisons;
+            settings.General.RaceLookupAuditEvery = RaceLookupAuditEvery;
+            settings.General.WeeklyCompanionLinqElision = WeeklyCompanionLinqElision;
 
             settings.Profiling.ProfileTorCampaignHandlers = ProfileTorCampaignHandlers;
             settings.Profiling.ProfileTorMissionHandlers = ProfileTorMissionHandlers;
@@ -265,15 +286,29 @@ namespace BannerlordCpuOptimizer.Configuration
                 case BaselineMode:
                     settings.Profiling.Enabled = false;
                     settings.Benchmark.Enabled = true;
-                    settings.Benchmark.RunLabel = "baseline-cache-disabled";
+                    settings.Benchmark.RunLabel = "baseline-all-optimizations-disabled";
+                    settings.General.VanillaSafeOptimizations = false;
+                    settings.General.TorCampaignOptimizations = false;
+                    settings.General.TorMissionOptimizations = false;
+                    settings.General.UiDirtyStateOptimizations = false;
                     settings.General.CareerChoiceCacheMode = "Disabled";
+                    settings.General.MapVisibilityEarlyExit = false;
+                    settings.General.RaceLookupCache = false;
+                    settings.General.WeeklyCompanionLinqElision = false;
                     break;
 
                 case OptimizedMode:
                     settings.Profiling.Enabled = false;
                     settings.Benchmark.Enabled = true;
-                    settings.Benchmark.RunLabel = "optimized-cache-enabled";
+                    settings.Benchmark.RunLabel = "optimized-all-safe-optimizations-enabled";
+                    settings.General.VanillaSafeOptimizations = true;
+                    settings.General.TorCampaignOptimizations = true;
+                    settings.General.TorMissionOptimizations = true;
+                    settings.General.UiDirtyStateOptimizations = true;
                     settings.General.CareerChoiceCacheMode = "ShadowThenEnable";
+                    settings.General.MapVisibilityEarlyExit = true;
+                    settings.General.RaceLookupCache = true;
+                    settings.General.WeeklyCompanionLinqElision = true;
                     break;
 
                 case FocusedProfilerMode:
@@ -283,7 +318,11 @@ namespace BannerlordCpuOptimizer.Configuration
                     settings.Benchmark.RunLabel = string.IsNullOrWhiteSpace(CustomRunLabel)
                         ? "focused-profiler"
                         : CustomRunLabel.Trim();
+                    settings.General.TorCampaignOptimizations = true;
                     settings.General.CareerChoiceCacheMode = "ShadowThenEnable";
+                    settings.General.MapVisibilityEarlyExit = true;
+                    settings.General.RaceLookupCache = true;
+                    settings.General.WeeklyCompanionLinqElision = true;
                     break;
 
                 case CustomMode:

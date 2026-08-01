@@ -129,7 +129,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 }
                 else
                 {
-                    OptimizerLog.Info("Profiler is disabled. Focused optimization and benchmark gating remain independent.");
+                    OptimizerLog.Info("Profiler is disabled. Optimization and benchmark gating remain independent.");
                 }
 
                 _initialized = true;
@@ -220,6 +220,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 _gameActive = true;
                 _observedCampaign = GameCampaign.Current;
                 CareerChoiceCache.BeginGameSession(_observedCampaign);
+                ResetCampaignOptimizationValidation();
 
                 if (ProfilingEnabled)
                 {
@@ -306,12 +307,20 @@ namespace BannerlordCpuOptimizer.Runtime
             if (currentCampaign == null)
             {
                 CareerChoiceCache.EndGameSession();
-                OptimizerLog.Info("Career-choice cache cleared because Campaign.Current became unavailable.");
+                OptimizerLog.Info("Campaign-bound optimizer state cleared because Campaign.Current became unavailable.");
                 return;
             }
 
             CareerChoiceCache.BeginGameSession(currentCampaign);
-            OptimizerLog.Info("Career-choice cache entered shadow validation for the current campaign instance.");
+            ResetCampaignOptimizationValidation();
+            OptimizerLog.Info("All TOR campaign optimizations re-entered validation for the current campaign instance.");
+        }
+
+        private static void ResetCampaignOptimizationValidation()
+        {
+            MapVisibilityEarlyExit.ResetSession();
+            RaceLookupCache.ResetSession();
+            WeeklyCompanionLinqElision.Reset();
         }
 
         private static void StartSession()
@@ -386,12 +395,15 @@ namespace BannerlordCpuOptimizer.Runtime
 
         private static void LogMilestoneState()
         {
-            OptimizerLog.Info("Milestone 3 mode: validated TOR career-choice cache, whole-process A/B benchmarking, focused campaign attribution, MCM configuration, and automatic 200-hour completion.");
-            OptimizerLog.Info("Active optimization boundary: TORCareerChoices.GetChoice reference cache only; the other Milestone 3 targets remain observation-only until measured and proven equivalent.");
+            OptimizerLog.Info("Milestone 4 mode: exact-gated TOR career-choice, map-visibility, fixed-race, and weekly-companion optimizations with MCM, whole-process A/B benchmarking, focused attribution, and automatic 200-hour completion.");
+            OptimizerLog.Info("Active optimization boundary: no final hit-point, visibility, companion, AI, random, mission, or save-state value is cached or rescheduled.");
             OptimizerLog.Info("Configured switches: vanilla=" + _settings.General.VanillaSafeOptimizations
                 + " torCampaign=" + _settings.General.TorCampaignOptimizations
                 + " torMission=" + _settings.General.TorMissionOptimizations
                 + " ui=" + _settings.General.UiDirtyStateOptimizations
+                + " mapVisibility=" + _settings.General.MapVisibilityEarlyExit
+                + " raceLookup=" + _settings.General.RaceLookupCache
+                + " weeklyCompanions=" + _settings.General.WeeklyCompanionLinqElision
                 + " experimentalNative=" + _settings.General.ExperimentalNativePatches
                 + " fallback=" + _settings.General.AutomaticFallback + ".");
         }
