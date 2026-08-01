@@ -11,7 +11,7 @@ namespace BannerlordCpuOptimizer.Optimization
         {
             internal int Value;
             internal int Comparisons;
-            internal long Hits;
+            internal long HitCandidates;
             internal bool Active;
         }
 
@@ -73,16 +73,16 @@ namespace BannerlordCpuOptimizer.Optimization
                     return FaceGen.GetRaceOrDefault(raceId);
                 }
 
-                int reference = FaceGen.GetRaceOrDefault(raceId);
                 if (!Entries.TryGetValue(raceId, out Entry entry))
                 {
-                    entry = new Entry { Value = reference, Comparisons = 1 };
-                    Entries.Add(raceId, entry);
-                    return reference;
+                    int first = FaceGen.GetRaceOrDefault(raceId);
+                    Entries.Add(raceId, new Entry { Value = first, Comparisons = 1 });
+                    return first;
                 }
 
                 if (!entry.Active)
                 {
+                    int reference = FaceGen.GetRaceOrDefault(raceId);
                     if (entry.Value != reference)
                     {
                         DisableLocked("shadow mismatch for " + raceId);
@@ -97,9 +97,10 @@ namespace BannerlordCpuOptimizer.Optimization
                     return reference;
                 }
 
-                entry.Hits++;
-                if (entry.Hits % _auditEvery == 0)
+                entry.HitCandidates++;
+                if (entry.HitCandidates % _auditEvery == 0)
                 {
+                    int reference = FaceGen.GetRaceOrDefault(raceId);
                     _audits++;
                     if (entry.Value != reference)
                     {
