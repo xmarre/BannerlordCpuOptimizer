@@ -129,7 +129,7 @@ namespace BannerlordCpuOptimizer.Optimization
         private static bool ComputeEarlyExit(Vec2 position, float radius, Func<Settlement, bool> predicate)
         {
             var locator = Settlement.StartFindingLocatablesAroundPosition(position, radius);
-            Settlement settlement = locator.FindNextLocatable();
+            Settlement settlement = Settlement.FindNextLocatable(ref locator);
             while (settlement != null)
             {
                 if (predicate == null || predicate(settlement))
@@ -137,7 +137,7 @@ namespace BannerlordCpuOptimizer.Optimization
                     return true;
                 }
 
-                settlement = locator.FindNextLocatable();
+                settlement = Settlement.FindNextLocatable(ref locator);
             }
 
             return false;
