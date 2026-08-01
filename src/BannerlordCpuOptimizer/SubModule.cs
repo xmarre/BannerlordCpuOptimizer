@@ -13,6 +13,11 @@ namespace BannerlordCpuOptimizer
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
+        }
+
+        protected override void OnBeforeInitialModuleScreenSetAsRoot()
+        {
+            base.OnBeforeInitialModuleScreenSetAsRoot();
             OptimizerRuntime.Initialize();
         }
 
