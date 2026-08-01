@@ -11,6 +11,8 @@ namespace BannerlordCpuOptimizer.Runtime
 {
     internal static class OptimizerRuntime
     {
+        private const int AutomaticBenchmarkTargetHours = 200;
+
         private static readonly object Sync = new object();
         private static OptimizerSettings _settings;
         private static HarmonyProfilerPatches _profilerPatches;
@@ -22,6 +24,7 @@ namespace BannerlordCpuOptimizer.Runtime
         private static bool _optimizationPatchAttempted;
         private static bool _gameActive;
         private static GameCampaign _observedCampaign;
+        private static int _benchmarkCampaignHours;
         private static bool _initialized;
 
         internal static bool ProfilingEnabled => _settings?.Profiling.Enabled == true;
@@ -75,6 +78,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 _optimizationPatchAttempted = false;
                 _gameActive = false;
                 _observedCampaign = null;
+                _benchmarkCampaignHours = 0;
 
                 OptimizerLog.Info("BannerlordCpuOptimizer "
                     + (Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown")
@@ -98,7 +102,8 @@ namespace BannerlordCpuOptimizer.Runtime
                     + " overlay=" + _settings.Diagnostics.RuntimeOverlay + ".");
                 OptimizerLog.Info("Effective benchmark configuration: enabled=" + _settings.Benchmark.Enabled
                     + " label=" + _settings.Benchmark.RunLabel
-                    + " format=" + _settings.Benchmark.ReportFormat + ".");
+                    + " format=" + _settings.Benchmark.ReportFormat
+                    + " automaticTargetHours=" + AutomaticBenchmarkTargetHours + ".");
                 OptimizerLog.Info("Effective career-choice cache configuration: mode="
                     + _settings.General.CareerChoiceCacheMode
                     + " comparisons=" + _settings.General.CareerChoiceShadowComparisons
@@ -168,7 +173,34 @@ namespace BannerlordCpuOptimizer.Runtime
 
         internal static void OnCampaignHourElapsed()
         {
-            _benchmarkSession?.CampaignHourElapsed();
+            lock (Sync)
+            {
+                if (_benchmarkSession == null)
+                {
+                    return;
+                }
+
+                _benchmarkSession.CampaignHourElapsed();
+                _benchmarkCampaignHours++;
+                if (_benchmarkCampaignHours < AutomaticBenchmarkTargetHours)
+                {
+                    return;
+                }
+
+                string completionReason = "automatic-target-" + AutomaticBenchmarkTargetHours + "-campaign-hours";
+                WriteBenchmark(completionReason);
+                if (ProfilingEnabled)
+                {
+                    WriteSession(completionReason);
+                }
+
+                OptimizerLog.Info("Automatic measurement target reached after "
+                    + AutomaticBenchmarkTargetHours + " campaign hours; all active reports were written.");
+                TaleWorlds.Library.InformationManager.DisplayMessage(
+                    new TaleWorlds.Library.InformationMessage(
+                        "Bannerlord CPU Optimizer: " + AutomaticBenchmarkTargetHours
+                        + " campaign-hour run complete. Reports were written; you can exit normally."));
+            }
         }
 
         internal static void OnGameStarted()
@@ -251,6 +283,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 _settings = null;
                 _deferredProfilerTargetsApplied = false;
                 _optimizationPatchAttempted = false;
+                _benchmarkCampaignHours = 0;
                 _initialized = false;
                 OptimizerLog.Info("Teardown complete; profiler, benchmark, optimization, cache, and lifecycle state cleared.");
                 OptimizerLog.Shutdown();
@@ -289,12 +322,14 @@ namespace BannerlordCpuOptimizer.Runtime
 
         private static void StartBenchmark()
         {
+            _benchmarkCampaignHours = 0;
             _benchmarkSession = new BenchmarkSession(
                 _settings.Benchmark.RunLabel,
                 _settings.General.CareerChoiceCacheMode,
                 ProfilingEnabled);
             OptimizerLog.Info("Whole-process benchmark started: " + _benchmarkSession.SessionId
-                + " label=" + _benchmarkSession.RunLabel + ".");
+                + " label=" + _benchmarkSession.RunLabel
+                + " automaticTargetHours=" + AutomaticBenchmarkTargetHours + ".");
         }
 
         private static void WriteSession(string reason)
@@ -351,7 +386,7 @@ namespace BannerlordCpuOptimizer.Runtime
 
         private static void LogMilestoneState()
         {
-            OptimizerLog.Info("Milestone 3 mode: validated TOR career-choice cache, whole-process A/B benchmarking, focused campaign attribution, and MCM configuration.");
+            OptimizerLog.Info("Milestone 3 mode: validated TOR career-choice cache, whole-process A/B benchmarking, focused campaign attribution, MCM configuration, and automatic 200-hour completion.");
             OptimizerLog.Info("Active optimization boundary: TORCareerChoices.GetChoice reference cache only; the other Milestone 3 targets remain observation-only until measured and proven equivalent.");
             OptimizerLog.Info("Configured switches: vanilla=" + _settings.General.VanillaSafeOptimizations
                 + " torCampaign=" + _settings.General.TorCampaignOptimizations
