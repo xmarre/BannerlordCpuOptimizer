@@ -17,6 +17,13 @@ assert "MapVisibilityEarlyExit.ResetSession();" in reset_body
 assert "RaceLookupCache.ResetSession();" in reset_body
 assert "WeeklyCompanionLinqElision.Reset();" in reset_body
 
+# The caller, reference helper, and predicate all participate in the replacement,
+# so every one must be free of unknown Harmony owners.
+assert "!ValidateForeignPatches(caller)" in map_patch
+assert "!ValidateForeignPatches(find)" in map_patch
+assert "!ValidateForeignPatches(predicate)" in map_patch
+assert "participating method" in map_patch
+
 # A successful unpatch releases the original delegate. A failed unpatch leaves the
 # replacement disabled but retains the original delegate as a behavior-preserving fallback.
 assert "bool unpatched = false;" in map_patch
@@ -28,11 +35,11 @@ assert "_original = null;" in clear_body
 fallback_body = map_engine.split("if (!_enabled || original == null)", 1)[1].split("long call", 1)[0]
 assert "original(position, radius, predicate).Count > 0" in fallback_body
 
-# Weekly result materialization may pre-size from ICollection<T>, but must not
-# enumerate early, change ordering, or introduce per-item atomics.
-assert "ICollection<T> collection = source as ICollection<T>;" in weekly
-assert "new List<T>(collection.Count)" in weekly
+# Weekly materialization must preserve deferred source enumeration and source order,
+# with no extra Count access and no per-item atomic operation.
+assert "var result = new List<T>();" in weekly
+assert "ICollection<T>" not in weekly
 loop_body = weekly.split("foreach (T item in source)", 1)[1].split("Interlocked.Add(ref _itemsVisited, visited);", 1)[0]
 assert "Interlocked." not in loop_body
 
-print("Milestone 4 lifecycle, fallback, and weekly allocation gates passed.")
+print("Milestone 4 lifecycle, foreign-owner, fallback, and weekly semantic gates passed.")
