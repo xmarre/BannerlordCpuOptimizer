@@ -16,6 +16,11 @@ try {
         --no-restore `
         --configuration $Configuration `
         -p:ContinuousIntegrationBuild=true
+    dotnet run `
+        --project '.\tests\BannerlordCpuOptimizer.HarmonyTeardownHarness\BannerlordCpuOptimizer.HarmonyTeardownHarness.csproj' `
+        --no-build `
+        --no-restore `
+        --configuration $Configuration
 } finally {
     Pop-Location
 }
