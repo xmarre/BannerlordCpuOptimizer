@@ -87,19 +87,22 @@ namespace BannerlordCpuOptimizer.Optimization
 
         internal void Remove()
         {
+            bool unpatched = false;
             try
             {
                 _harmony.UnpatchAll(HarmonyId);
+                unpatched = true;
             }
             catch (Exception exception)
             {
                 OptimizerLog.WriteExceptionOnce("map-visibility-unpatch",
-                    "Could not remove map-visibility optimization", exception);
+                    "Could not remove map-visibility optimization; its replacement remains disabled and delegates to original TOR behavior",
+                    exception);
             }
             finally
             {
                 _target = null;
-                MapVisibilityEarlyExit.Clear();
+                MapVisibilityEarlyExit.Clear(unpatched);
             }
         }
 
