@@ -57,7 +57,9 @@ namespace BannerlordCpuOptimizer.Optimization
                 return 0;
             }
 
-            if (!ValidateForeignPatches(caller))
+            if (!ValidateForeignPatches(caller)
+                || !ValidateForeignPatches(find)
+                || !ValidateForeignPatches(predicate))
             {
                 return 0;
             }
@@ -125,10 +127,12 @@ namespace BannerlordCpuOptimizer.Optimization
                 return true;
             }
 
-            OptimizerLog.Once("map-visibility-foreign-owners", "WARN",
-                "Map-visibility optimization was not applied because another Harmony owner modifies "
-                + ProfilerTargetSpec.FormatSignature(target) + ": " + string.Join(", ", owners)
-                + ". Original and third-party behavior will continue unchanged.");
+            OptimizerLog.Once(
+                "map-visibility-foreign-owners-" + target.MetadataToken,
+                "WARN",
+                "Map-visibility optimization was not applied because another Harmony owner modifies participating method "
+                    + ProfilerTargetSpec.FormatSignature(target) + ": " + string.Join(", ", owners)
+                    + ". Original and third-party behavior will continue unchanged.");
             return false;
         }
 
