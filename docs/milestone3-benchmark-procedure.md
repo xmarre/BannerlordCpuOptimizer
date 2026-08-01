@@ -1,6 +1,6 @@
 # Milestone 3 benchmark procedure
 
-Milestone 3 separates whole-process A/B measurement from method profiling. Configuration is performed entirely through MCM. No JSON file copying or editing is required.
+Milestone 3 separates whole-process A/B measurement from method profiling. Configuration is performed entirely through MCM. No JSON file copying, editing, or manual campaign-hour timing is required.
 
 Open:
 
@@ -10,19 +10,25 @@ Main Menu or Pause Menu > Options > Mod Options > Bannerlord CPU Optimizer
 
 Every setting is restart-gated. After changing the operating mode, save the MCM change, close Bannerlord completely, and relaunch it. This guarantees that each benchmark begins with a clean process and that no previous profiler or Harmony state contaminates the run.
 
+## Automatic completion
+
+Benchmark and Focused Profiler sessions finish automatically after exactly 200 campaign-hour callbacks. When the target is reached, the active benchmark report is written immediately. Focused Profiler mode also writes its active profile report. An in-game message confirms completion.
+
+You do not need to watch the date, count days, or exit at an exact moment. After the completion message appears, exit normally and preserve the generated files. Two hundred campaign hours equal eight in-game days and eight hours, but that conversion is informational only.
+
 ## Controlled campaign A/B run
 
 Use one copied save as the starting point for both runs. Keep the complete module list, game settings, process priority, resolution, frame limiter, camera position, campaign speed, and background applications unchanged.
 
 ### Baseline
 
-1. Install v0.3.1 cleanly.
+1. Install v0.3.2 cleanly.
 2. In the Bannerlord CPU Optimizer MCM page, set `Operating Mode` to `Benchmark - Baseline`.
 3. Save the MCM settings and restart Bannerlord completely.
 4. Load the copied starting save.
 5. Leave the campaign camera and speed in the chosen reproducible state.
-6. Advance exactly 200 campaign hours, without opening menus or entering a mission unless that is part of the fixed route.
-7. Exit normally so the report is written.
+6. Let the campaign run until the optimizer displays its 200-hour completion message.
+7. Exit normally.
 8. Preserve the optimizer log and both `BannerlordCpuOptimizer-Benchmark-...baseline-cache-disabled` files.
 
 This mode automatically disables method profiling and disables the career-choice cache. The comparison-safe report label is assigned automatically.
@@ -32,7 +38,7 @@ This mode automatically disables method profiling and disables the career-choice
 1. Restore the same untouched starting save.
 2. In MCM, set `Operating Mode` to `Benchmark - Optimized`.
 3. Save the MCM settings and restart Bannerlord completely.
-4. Repeat the identical route for exactly 200 campaign hours.
+4. Repeat the identical route until the optimizer displays its completion message.
 5. Exit normally.
 6. Preserve the optimizer log and both `BannerlordCpuOptimizer-Benchmark-...optimized-cache-enabled` files.
 
@@ -53,7 +59,7 @@ Run baseline and optimized at least three times each when practical. Alternate t
 - `MaximumFrameMilliseconds`
 - `Gen0CollectionsDelta`, `Gen1CollectionsDelta`, and `Gen2CollectionsDelta`
 
-The campaign-hour-normalized fields remain comparable if one run advances a slightly different number of campaign hours. A valid optimized run must also show cache promotion, active hits, zero mismatches, and no disabled reason.
+A valid optimized run must show cache promotion, active hits, zero mismatches, no disabled reason, and 200 recorded campaign hours.
 
 Compare a baseline and optimized JSON report with:
 
@@ -68,11 +74,12 @@ The script refuses reports created with method profiling enabled and prints perc
 1. In MCM, set `Operating Mode` to `Focused Profiler`.
 2. Optionally set `Custom Run Label`.
 3. Save the MCM settings and restart Bannerlord completely.
-4. Load the test save and advance far enough to execute at least one weekly companion tick.
-5. Include one representative battle if mission counting and mixed campaign/mission context are required.
-6. Exit normally and preserve the profiler, benchmark, and log files.
+4. Load the test save.
+5. Include one representative battle during the run.
+6. Continue until the optimizer displays its 200-hour completion message.
+7. Exit normally and preserve the profiler, benchmark, and log files.
 
-Focused Profiler automatically enables the focused target set, the benchmark diagnostic companion, and the validated cache. Its process-CPU values include profiler overhead and must not be compared directly with the profiling-free A/B runs.
+The 200-hour duration includes at least one weekly companion tick. Focused Profiler automatically enables the focused target set, the benchmark diagnostic companion, and the validated cache. Its process-CPU values include profiler overhead and must not be compared directly with the profiling-free A/B runs.
 
 The focused profiler targets are:
 
