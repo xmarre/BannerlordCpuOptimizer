@@ -1,0 +1,28 @@
+{
+  "General": {
+    "VanillaSafeOptimizations": true,
+    "TorCampaignOptimizations": true,
+    "TorMissionOptimizations": true,
+    "UiDirtyStateOptimizations": true,
+    "ExperimentalNativePatches": false,
+    "AutomaticFallback": true
+  },
+  "Profiling": {
+    "Enabled": true,
+    "ProfileTorCampaignHandlers": true,
+    "ProfileTorMissionHandlers": true,
+    "ProfileTorModels": true,
+    "ProfileVanillaHandlers": false,
+    "HighFrequencySampleEvery": 16,
+    "NormalSampleEvery": 1,
+    "ContextSampleSeconds": 1.0,
+    "ReportFormat": "Both",
+    "AllowUnknownProfilerTargets": false
+  },
+  "Diagnostics": {
+    "ShadowValidation": false,
+    "RuntimeOverlay": true,
+    "VerboseLogging": false,
+    "LogHarmonyConflicts": true
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "assemblies": {
+    "TOR_Core.dll": {
+      "assembly_name": "TOR_Core",
+      "method_count": 10129,
+      "mvid": "933e2f8b-ec65-4b67-8a1d-153bcda29363",
+      "runtime": "v4.0.30319",
+      "type_count": 1483
+    },
+    "TaleWorlds.CampaignSystem.dll": {
+      "assembly_name": "TaleWorlds.CampaignSystem",
+      "method_count": 26911,
+      "mvid": "4b87d2d0-89dd-4989-adb4-69b0cca71136",
+      "runtime": "v4.0.30319",
+      "type_count": 2297
+    },
+    "TaleWorlds.Engine.dll": {
+      "assembly_name": "TaleWorlds.Engine",
+      "method_count": 4187,
+      "mvid": "3fb4feb9-c797-40f2-945f-74bbcd9e1994",
+      "runtime": "v4.0.30319",
+      "type_count": 230
+    },
+    "TaleWorlds.InputSystem.dll": {
+      "assembly_name": "TaleWorlds.InputSystem",
+      "method_count": 427,
+      "mvid": "73047213-64e8-486f-bb38-7a6bbf4bb4e3",
+      "runtime": "v4.0.30319",
+      "type_count": 24
+    },
+    "TaleWorlds.Library.dll": {
+      "assembly_name": "TaleWorlds.Library",
+      "method_count": 2026,
+      "mvid": "f951690e-4797-446e-a601-97418ef60bf5",
+      "runtime": "v4.0.30319",
+      "type_count": 255
+    },
+    "TaleWorlds.Localization.dll": {
+      "assembly_name": "TaleWorlds.Localization",
+      "method_count": 701,
+      "mvid": "d438bef0-6afc-4c84-86a7-1b2871b20c62",
+      "runtime": "v4.0.30319",
+      "type_count": 103
+    },
+    "TaleWorlds.MountAndBlade.dll": {
+      "assembly_name": "TaleWorlds.MountAndBlade",
+      "method_count": 16840,
+      "mvid": "97564b07-7ad8-4ccd-9234-6076ec5623fe",
+      "runtime": "v4.0.30319",
+      "type_count": 1730
+    },
+    "TaleWorlds.ObjectSystem.dll": {
+      "assembly_name": "TaleWorlds.ObjectSystem",
+      "method_count": 231,
+      "mvid": "a5961eb4-58ed-4baa-8baf-9af3384e1a58",
+      "runtime": "v4.0.30319",
+      "type_count": 27
+    }
+  },
+  "binary_dir": "/mnt/data",
+  "targets": [
+    {
+      "il_bytes": 22,
+      "method": "OnMapScreenUpdate",
+      "sha256": "4279fe59b9f5823da4d4e26a68c03586da267cc8c09ac3507a5246cb63371762",
+      "signature": "(float32)->void",
+      "type": "TOR_Core.CampaignMechanics.WaaaghMeter.WaaaghMeterMapView"
+    },
+    {
+      "il_bytes": 129,
+      "method": "RefreshValues",
+      "sha256": "24e0e442851bc4d5bb7fac9b1899e9b851d86affca106e1c08204d8a162d4780",
+      "signature": "()->void",
+      "type": "TOR_Core.CampaignMechanics.WaaaghMeter.WaaaghMeterVM"
+    },
+    {
+      "il_bytes": 232,
+      "method": "OnMissionTick",
+      "sha256": "ed4034fc41759d4dd2f7f1b2f277f34f5b5df8aa556232629f4821c03c9d53bb",
+      "signature": "(float32)->void",
+      "type": "TOR_Core.AbilitySystem.AbilityHUDMissionView"
+    },
+    {
+      "il_bytes": 165,
+      "method": "OnMissionTick",
+      "sha256": "ac4e5117b8856ababc83586a67308861762a5d3e6538cf9d50c743b40c23ae7a",
+      "signature": "(float32)->void",
+      "type": "TOR_Core.BattleMechanics.StatusEffect.StatusEffectMissionLogic"
+    },
+    {
+      "il_bytes": 583,
+      "method": "OnMissionTick",
+      "sha256": "2b81e1025a23dcb0ebef12b144a6bcb073eccb990d31ff383de0a4ff8774431f",
+      "signature": "(float32)->void",
+      "type": "TOR_Core.BattleMechanics.TORBattleAgentLogic"
+    },
+    {
+      "il_bytes": 79,
+      "method": "TickCastingState",
+      "sha256": "9ec58a57f7802fdf54662fe399d0e105209e35486d908346df9acdbbf3a86378",
+      "signature": "()->void",
+      "type": "TOR_Core.AbilitySystem.Ability"
+    },
+    {
+      "il_bytes": 258,
+      "method": "OnPreMissionTick",
+      "sha256": "c5a8bcbc28bd23c17461e7ab41b2504c6f1917fe4d701a44070cacf0af11b4d1",
+      "signature": "(float32)->void",
+      "type": "TOR_Core.AbilitySystem.AbilityManagerMissionLogic"
+    },
+    {
+      "il_bytes": 445,
+      "method": "FindTargets",
+      "sha256": "77545f770ea7ce91431d903b3ced71c952296bbb1ad54a95acd479b126e825e8",
+      "signature": "(TaleWorlds.MountAndBlade.Agent,TOR_Core.AbilitySystem.AbilityTemplate)->System.Collections.Generic.List`1<TOR_Core.BattleMechanics.AI.CommonAIFunctions.Target>",
+      "type": "TOR_Core.BattleMechanics.AI.CastingAI.AgentCastingBehaviorConfiguration"
+    },
+    {
+      "il_bytes": 354,
+      "method": "GetPartySpottingRange",
+      "sha256": "da46117a540b2ad0e28dad4e7076fd0311ce43e97f47912cd9c8f343a59b29e2",
+      "signature": "(TaleWorlds.CampaignSystem.Party.MobileParty,bool)->TaleWorlds.CampaignSystem.ExplainedNumber",
+      "type": "TOR_Core.Models.TORMapVisibilityModel"
+    },
+    {
+      "il_bytes": 4176,
+      "method": "GetCultureSpecificCustomResourceChange",
+      "sha256": "c1f7a09d03617f6144226060b21035b20ae7b8552c8cd55f17bc6bc74069839e",
+      "signature": "(TaleWorlds.CampaignSystem.Hero,string)->TaleWorlds.CampaignSystem.ExplainedNumber",
+      "type": "TOR_Core.Models.TORCustomResourceModel"
+    },
+    {
+      "il_bytes": 363,
+      "method": "HourlyTick",
+      "sha256": "cf2b82a2cbc3213f045658402d0263bfeb44810eaf8e4746c0228125bddc8c34",
+      "signature": "()->void",
+      "type": "TOR_Core.Extensions.ExtendedInfoSystem.ExtendedInfoManager"
+    }
+  ]
+}
