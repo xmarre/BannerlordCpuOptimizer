@@ -13,8 +13,8 @@ jobs:
     runs-on: windows-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: v0.1.1
-      RELEASE_TITLE: Bannerlord CPU Optimizer v0.1.1 - Profiler settings fix
+      RELEASE_TAG: v0.1.2
+      RELEASE_TITLE: Bannerlord CPU Optimizer v0.1.2 - TOR startup crash fix
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,7 +36,7 @@ jobs:
       - name: Verify package contents
         shell: pwsh
         run: |
-          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.1.1-profiler-only.zip'
+          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.1.2-profiler-only.zip'
           $entries = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip)).Entries.FullName
           $required = @(
             'Modules/BannerlordCpuOptimizer/SubModule.xml',
@@ -59,10 +59,10 @@ jobs:
             exit 0
           }
           gh release create $env:RELEASE_TAG `
-            '.\artifacts\BannerlordCpuOptimizer-v0.1.1-profiler-only.zip' `
+            '.\artifacts\BannerlordCpuOptimizer-v0.1.2-profiler-only.zip' `
             '.\artifacts\SHA256SUMS.txt' `
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
             --title $env:RELEASE_TITLE `
-            --notes-file '.\.github\release-notes\v0.1.1.md' `
+            --notes-file '.\.github\release-notes\v0.1.2.md' `
             --latest
