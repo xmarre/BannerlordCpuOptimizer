@@ -4,6 +4,24 @@
 
 Milestone 1 establishes where managed CPU time and allocations occur. It does not modify gameplay logic.
 
+## Configuration
+
+The active configuration is:
+
+```text
+Modules\BannerlordCpuOptimizer\ModuleData\BannerlordCpuOptimizer\settings.json
+```
+
+Set `Profiling.Enabled` to `true`. `settings.profiler.json` is an enabled template that can be copied over `settings.json`.
+
+The packaged settings file is authoritative when present. If it is missing, the module falls back to:
+
+```text
+Documents\Mount and Blade II Bannerlord\Configs\BannerlordCpuOptimizer\settings.json
+```
+
+The startup log prints `Settings loaded from:` and `Effective profiler configuration:` so the active file and effective flags can be verified directly.
+
 ## Baseline procedure
 
 Use the same module list, save, graphics settings, battle size, camera route, campaign speed, and test duration for every comparison.

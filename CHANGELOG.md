@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 - Profiler settings loading fix
+
+- Fixed the packaged `ModuleData/BannerlordCpuOptimizer/settings.json` being ignored at runtime.
+- Made the packaged module settings file authoritative when present.
+- Retained the Documents configuration as a fallback when the packaged file is missing.
+- Added startup logging for the exact settings path and effective profiler flags.
+- Added a release gate covering the packaged-settings loading contract.
+
 ## 0.1.0 - Profiler-only milestone
 
 - Added a Bannerlord v1.3.15 module skeleton targeting .NET Framework 4.7.2.
