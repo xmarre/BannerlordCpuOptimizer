@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 - Whole-process campaign measurement
+
+- Added profiler-independent whole-process benchmark sessions.
+- Added process CPU time, normalized CPU percentages, campaign throughput, frame-time average/p50/p95/p99/maximum, mission counts, GC deltas, and managed-memory deltas.
+- Added allocation-free fixed-histogram frame recording.
+- Added JSON and CSV benchmark reports.
+- Added profiling-free baseline and optimized A/B settings templates.
+- Added focused attribution for `TORCharacterStatsModel.MaxHitpoints`.
+- Added focused attribution for `TORMapVisibilityModel.GetPartySpottingRange`, its settlement predicate, and `TORCommon.FindSettlementsAroundPosition`.
+- Added focused attribution for `TORCompanionsCampaignBehavior.WeeklyTick`.
+- Added a controlled 200-campaign-hour A/B procedure.
+- Kept the v0.2.1 career-choice cache as the only active gameplay optimization; all new targets remain observation-only.
+
 ## 0.2.1 - Harmony teardown fix
 
 - Replaced the unsupported generic Harmony patch class with a non-generic runtime-emitted patch type.

@@ -24,18 +24,42 @@ jobs:
           cache-dependency-path: |
             src/BannerlordCpuOptimizer/BannerlordCpuOptimizer.csproj
             tests/BannerlordCpuOptimizer.HarmonyTeardownHarness/BannerlordCpuOptimizer.HarmonyTeardownHarness.csproj
-      - name: Build and run Milestone 2 safety gates
+      - name: Build and run Milestone 3 safety gates
         shell: pwsh
         run: .\build.ps1 -Configuration Release
       - name: Package module
         shell: pwsh
         run: .\package.ps1 -Configuration Release
+      - name: Verify release candidate contents
+        shell: pwsh
+        run: |
+          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.3.0-campaign-measurement.zip'
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
+          try {
+            $entries = $archive.Entries.FullName
+            $required = @(
+              'Modules/BannerlordCpuOptimizer/SubModule.xml',
+              'Modules/BannerlordCpuOptimizer/bin/Win64_Shipping_Client/BannerlordCpuOptimizer.dll',
+              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.json',
+              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.profiler.json',
+              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.benchmark-baseline.json',
+              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.benchmark-optimized.json'
+            )
+            foreach ($path in $required) {
+              if ($entries -notcontains $path) { throw "Release archive is missing $path" }
+            }
+            if ($entries | Where-Object { $_ -match '(^|/)0Harmony\.dll$|(^|/)TaleWorlds\..*\.dll$|(^|/)TOR_Core\.dll$|HarmonyTeardownHarness' }) {
+              throw 'Release archive contains a forbidden runtime or test assembly.'
+            }
+          } finally {
+            $archive.Dispose()
+          }
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: BannerlordCpuOptimizer-v0.2.1-milestone2
+          name: BannerlordCpuOptimizer-v0.3.0-campaign-measurement
           path: |
-            artifacts/BannerlordCpuOptimizer-v0.2.1-milestone2.zip
+            artifacts/BannerlordCpuOptimizer-v0.3.0-campaign-measurement.zip
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30

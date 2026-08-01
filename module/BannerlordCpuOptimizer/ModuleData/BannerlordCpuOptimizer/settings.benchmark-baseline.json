@@ -6,7 +6,7 @@
     "UiDirtyStateOptimizations": true,
     "ExperimentalNativePatches": false,
     "AutomaticFallback": true,
-    "CareerChoiceCacheMode": "ShadowThenEnable",
+    "CareerChoiceCacheMode": "Disabled",
     "CareerChoiceShadowComparisons": 256,
     "CareerChoiceMinimumDistinctIds": 1,
     "CareerChoiceAuditEvery": 1024
@@ -33,8 +33,8 @@
     "LogHarmonyConflicts": true
   },
   "Benchmark": {
-    "Enabled": false,
-    "RunLabel": "optimized",
+    "Enabled": true,
+    "RunLabel": "baseline-cache-disabled",
     "ReportFormat": "Both"
   }
 }

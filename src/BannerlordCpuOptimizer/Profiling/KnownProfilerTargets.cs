@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace BannerlordCpuOptimizer.Profiling
@@ -24,11 +25,18 @@ namespace BannerlordCpuOptimizer.Profiling
 
         internal static IReadOnlyList<ProfilerTargetSpec> CreateFocused(int sampleEvery)
         {
+            int lowFrequency = Math.Max(1, sampleEvery);
+            int mediumFrequency = Math.Max(4, sampleEvery);
+            int highFrequency = Math.Max(16, sampleEvery);
+            int veryHighFrequency = Math.Max(64, sampleEvery);
             return new[]
             {
-                Spec("TOR_Core.CharacterDevelopment.TORCareerChoices", "GetChoice", "TOR_Core.CharacterDevelopment.CareerSystem.CareerChoiceObject", new[] { "System.String" }, "Milestone 2 focused", sampleEvery, "d43d63915c133164674d16f246e8d55afd0e165d322fd6ca2b3d5a9e6956d56d"),
-                Spec("TOR_Core.CharacterDevelopment.CareerSystem.CareerHelper", "CalculateTroopWageCareerPerkEffect", "System.Single", new[] { "TaleWorlds.CampaignSystem.Roster.TroopRosterElement", "TOR_Core.CharacterDevelopment.CareerSystem.CareerChoiceObject", "TaleWorlds.Localization.TextObject&" }, "Milestone 2 focused", sampleEvery, "625660a4834ee1ff607d04d167920656c598be39c61cc01564711205731e816e"),
-                Spec("TOR_Core.Utilities.TORCommon", "FindSettlementsAroundPosition", "TaleWorlds.Library.MBList`1[TaleWorlds.CampaignSystem.Settlements.Settlement]", new[] { "TaleWorlds.Library.Vec2", "System.Single", "System.Func`2[TaleWorlds.CampaignSystem.Settlements.Settlement,System.Boolean]" }, "Milestone 2 focused", sampleEvery, "34208fbc8958a6c869968edd8ac7e0018a2691f120cfb0893958d989ff971876")
+                Spec("TOR_Core.CharacterDevelopment.TORCareerChoices", "GetChoice", "TOR_Core.CharacterDevelopment.CareerSystem.CareerChoiceObject", new[] { "System.String" }, "Milestone 3 cache control", veryHighFrequency, "d43d63915c133164674d16f246e8d55afd0e165d322fd6ca2b3d5a9e6956d56d"),
+                Spec("TOR_Core.Models.TORCharacterStatsModel", "MaxHitpoints", "TaleWorlds.CampaignSystem.ExplainedNumber", new[] { "TaleWorlds.CampaignSystem.CharacterObject", "System.Boolean" }, "Milestone 3 hit-points", highFrequency, null),
+                Spec("TOR_Core.Models.TORMapVisibilityModel", "GetPartySpottingRange", "TaleWorlds.CampaignSystem.ExplainedNumber", new[] { "TaleWorlds.CampaignSystem.Party.MobileParty", "System.Boolean" }, "Milestone 3 map visibility", mediumFrequency, "da46117a540b2ad0e28dad4e7076fd0311ce43e97f47912cd9c8f343a59b29e2"),
+                Spec("TOR_Core.Models.TORMapVisibilityModel+<>c", "<GetPartySpottingRange>b__0_0", "System.Boolean", new[] { "TaleWorlds.CampaignSystem.Settlements.Settlement" }, "Milestone 3 map visibility predicate", highFrequency, null),
+                Spec("TOR_Core.Utilities.TORCommon", "FindSettlementsAroundPosition", "TaleWorlds.Library.MBList`1[TaleWorlds.CampaignSystem.Settlements.Settlement]", new[] { "TaleWorlds.Library.Vec2", "System.Single", "System.Func`2[TaleWorlds.CampaignSystem.Settlements.Settlement,System.Boolean]" }, "Milestone 3 map visibility child", mediumFrequency, "34208fbc8958a6c869968edd8ac7e0018a2691f120cfb0893958d989ff971876"),
+                Spec("TOR_Core.CampaignMechanics.Companions.TORCompanionsCampaignBehavior", "WeeklyTick", "System.Void", Empty, "Milestone 3 weekly companion hitch", lowFrequency, null)
             };
         }
 

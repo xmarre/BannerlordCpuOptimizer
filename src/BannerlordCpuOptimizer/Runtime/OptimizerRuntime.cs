@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using BannerlordCpuOptimizer.Benchmarking;
 using BannerlordCpuOptimizer.Configuration;
 using BannerlordCpuOptimizer.Diagnostics;
 using BannerlordCpuOptimizer.Optimization;
@@ -15,6 +16,7 @@ namespace BannerlordCpuOptimizer.Runtime
         private static HarmonyProfilerPatches _profilerPatches;
         private static CareerChoiceCachePatches _careerChoiceCachePatches;
         private static ProfileSession _session;
+        private static BenchmarkSession _benchmarkSession;
         private static RuntimeOverlay _overlay;
         private static bool _deferredProfilerTargetsApplied;
         private static bool _optimizationPatchAttempted;
@@ -23,6 +25,8 @@ namespace BannerlordCpuOptimizer.Runtime
         private static bool _initialized;
 
         internal static bool ProfilingEnabled => _settings?.Profiling.Enabled == true;
+        internal static bool BenchmarkEnabled => _settings?.Benchmark.Enabled == true;
+        internal static bool MeasurementEnabled => ProfilingEnabled || BenchmarkEnabled;
 
         internal static void Initialize()
         {
@@ -61,6 +65,9 @@ namespace BannerlordCpuOptimizer.Runtime
                     + " vanilla=" + _settings.Profiling.ProfileVanillaHandlers
                     + " optionalMetrics=" + _settings.Profiling.EnableOptionalContextMetrics
                     + " overlay=" + _settings.Diagnostics.RuntimeOverlay + ".");
+                OptimizerLog.Info("Effective benchmark configuration: enabled=" + _settings.Benchmark.Enabled
+                    + " label=" + _settings.Benchmark.RunLabel
+                    + " format=" + _settings.Benchmark.ReportFormat + ".");
                 OptimizerLog.Info("Effective career-choice cache configuration: mode="
                     + _settings.General.CareerChoiceCacheMode
                     + " comparisons=" + _settings.General.CareerChoiceShadowComparisons
@@ -86,7 +93,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 }
                 else
                 {
-                    OptimizerLog.Info("Profiler is disabled. Focused optimization gating remains active independently.");
+                    OptimizerLog.Info("Profiler is disabled. Focused optimization and benchmark gating remain independent.");
                 }
 
                 _initialized = true;
@@ -118,6 +125,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 }
             }
 
+            _benchmarkSession?.OnApplicationTick();
             if (!ProfilingEnabled)
             {
                 return;
@@ -125,6 +133,11 @@ namespace BannerlordCpuOptimizer.Runtime
 
             FrameProfiler.OnApplicationTick();
             _overlay?.Tick();
+        }
+
+        internal static void OnCampaignHourElapsed()
+        {
+            _benchmarkSession?.CampaignHourElapsed();
         }
 
         internal static void OnGameStarted()
@@ -135,6 +148,10 @@ namespace BannerlordCpuOptimizer.Runtime
                 {
                     WriteSession("game-restart");
                 }
+                if (BenchmarkEnabled && _benchmarkSession != null)
+                {
+                    WriteBenchmark("game-restart");
+                }
 
                 _gameActive = true;
                 _observedCampaign = GameCampaign.Current;
@@ -143,6 +160,10 @@ namespace BannerlordCpuOptimizer.Runtime
                 if (ProfilingEnabled)
                 {
                     StartSession();
+                }
+                if (BenchmarkEnabled)
+                {
+                    StartBenchmark();
                 }
             }
         }
@@ -156,6 +177,10 @@ namespace BannerlordCpuOptimizer.Runtime
                 if (ProfilingEnabled)
                 {
                     WriteSession("game-end");
+                }
+                if (BenchmarkEnabled)
+                {
+                    WriteBenchmark("game-end");
                 }
 
                 CareerChoiceCache.EndGameSession();
@@ -179,6 +204,10 @@ namespace BannerlordCpuOptimizer.Runtime
                     WriteSession("module-unload");
                     _profilerPatches?.Remove();
                 }
+                if (BenchmarkEnabled)
+                {
+                    WriteBenchmark("module-unload");
+                }
 
                 _careerChoiceCachePatches?.Remove();
                 LifecycleManager.ClearAll();
@@ -186,11 +215,12 @@ namespace BannerlordCpuOptimizer.Runtime
                 _profilerPatches = null;
                 _careerChoiceCachePatches = null;
                 _session = null;
+                _benchmarkSession = null;
                 _settings = null;
                 _deferredProfilerTargetsApplied = false;
                 _optimizationPatchAttempted = false;
                 _initialized = false;
-                OptimizerLog.Info("Teardown complete; profiler, optimization, cache, and lifecycle state cleared.");
+                OptimizerLog.Info("Teardown complete; profiler, benchmark, optimization, cache, and lifecycle state cleared.");
                 OptimizerLog.Shutdown();
             }
         }
@@ -225,6 +255,16 @@ namespace BannerlordCpuOptimizer.Runtime
             OptimizerLog.Info("Profile session started: " + _session.SessionId + ".");
         }
 
+        private static void StartBenchmark()
+        {
+            _benchmarkSession = new BenchmarkSession(
+                _settings.Benchmark.RunLabel,
+                _settings.General.CareerChoiceCacheMode,
+                ProfilingEnabled);
+            OptimizerLog.Info("Whole-process benchmark started: " + _benchmarkSession.SessionId
+                + " label=" + _benchmarkSession.RunLabel + ".");
+        }
+
         private static void WriteSession(string reason)
         {
             if (_session == null)
@@ -251,10 +291,36 @@ namespace BannerlordCpuOptimizer.Runtime
             }
         }
 
+        private static void WriteBenchmark(string reason)
+        {
+            if (_benchmarkSession == null)
+            {
+                return;
+            }
+
+            try
+            {
+                BenchmarkReport report = _benchmarkSession.Complete(reason);
+                BenchmarkReportWriter.Write(report, PathProvider.ReportDirectory, _settings.Benchmark.ReportFormat);
+                OptimizerLog.Info("Whole-process benchmark completed because of " + reason + ".");
+            }
+            catch (Exception exception)
+            {
+                OptimizerLog.WriteExceptionOnce(
+                    "benchmark-report-" + _benchmarkSession.SessionId,
+                    "Could not write whole-process benchmark report",
+                    exception);
+            }
+            finally
+            {
+                _benchmarkSession = null;
+            }
+        }
+
         private static void LogMilestoneState()
         {
-            OptimizerLog.Info("Milestone 2 mode: one strictly gated TOR campaign optimization plus focused profiling.");
-            OptimizerLog.Info("Active optimization boundary: TORCareerChoices.GetChoice reference cache only; no AI, simulation, mission, UI, native, or background-thread changes.");
+            OptimizerLog.Info("Milestone 3 mode: validated TOR career-choice cache, whole-process A/B benchmarking, and focused campaign attribution.");
+            OptimizerLog.Info("Active optimization boundary: TORCareerChoices.GetChoice reference cache only; the new Milestone 3 targets are observation-only until measured and proven equivalent.");
             OptimizerLog.Info("Configured switches: vanilla=" + _settings.General.VanillaSafeOptimizations
                 + " torCampaign=" + _settings.General.TorCampaignOptimizations
                 + " torMission=" + _settings.General.TorMissionOptimizations

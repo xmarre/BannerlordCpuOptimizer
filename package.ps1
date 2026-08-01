@@ -14,7 +14,7 @@ if (-not (Test-Path $dll)) {
 
 $artifactDir = Join-Path $root 'artifacts'
 New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
-$zip = Join-Path $artifactDir 'BannerlordCpuOptimizer-v0.2.1-milestone2.zip'
+$zip = Join-Path $artifactDir 'BannerlordCpuOptimizer-v0.3.0-campaign-measurement.zip'
 if (Test-Path $zip) {
     Remove-Item $zip -Force
 }
