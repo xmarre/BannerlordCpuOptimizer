@@ -13,8 +13,8 @@ jobs:
     runs-on: windows-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: v0.3.0
-      RELEASE_TITLE: Bannerlord CPU Optimizer v0.3.0 - Whole-process campaign measurement
+      RELEASE_TAG: v0.3.1
+      RELEASE_TITLE: Bannerlord CPU Optimizer v0.3.1 - MCM configuration
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: |
             src/BannerlordCpuOptimizer/BannerlordCpuOptimizer.csproj
             tests/BannerlordCpuOptimizer.HarmonyTeardownHarness/BannerlordCpuOptimizer.HarmonyTeardownHarness.csproj
-      - name: Build and run Milestone 3 safety gates
+      - name: Build and run Milestone 3 MCM safety gates
         shell: pwsh
         run: .\build.ps1 -Configuration Release
       - name: Package module
@@ -38,23 +38,19 @@ jobs:
       - name: Verify package contents
         shell: pwsh
         run: |
-          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.3.0-campaign-measurement.zip'
+          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.3.1-mcm.zip'
           $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
           try {
             $entries = $archive.Entries.FullName
             $required = @(
               'Modules/BannerlordCpuOptimizer/SubModule.xml',
-              'Modules/BannerlordCpuOptimizer/bin/Win64_Shipping_Client/BannerlordCpuOptimizer.dll',
-              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.json',
-              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.profiler.json',
-              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.benchmark-baseline.json',
-              'Modules/BannerlordCpuOptimizer/ModuleData/BannerlordCpuOptimizer/settings.benchmark-optimized.json'
+              'Modules/BannerlordCpuOptimizer/bin/Win64_Shipping_Client/BannerlordCpuOptimizer.dll'
             )
             foreach ($path in $required) {
               if ($entries -notcontains $path) { throw "Release archive is missing $path" }
             }
-            if ($entries | Where-Object { $_ -match '(^|/)0Harmony\.dll$|(^|/)TaleWorlds\..*\.dll$|(^|/)TOR_Core\.dll$|HarmonyTeardownHarness' }) {
-              throw 'Release archive contains a forbidden runtime or test assembly.'
+            if ($entries | Where-Object { $_ -match 'settings(\.|-)|(^|/)0Harmony\.dll$|(^|/)TaleWorlds\..*\.dll$|(^|/)TOR_Core\.dll$|(^|/)MCM.*\.dll$|HarmonyTeardownHarness' }) {
+              throw 'Release archive contains a manual settings template, third-party runtime, or test assembly.'
             }
           } finally {
             $archive.Dispose()
@@ -68,10 +64,10 @@ jobs:
             exit 0
           }
           gh release create $env:RELEASE_TAG `
-            '.\artifacts\BannerlordCpuOptimizer-v0.3.0-campaign-measurement.zip' `
+            '.\artifacts\BannerlordCpuOptimizer-v0.3.1-mcm.zip' `
             '.\artifacts\SHA256SUMS.txt' `
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
             --title $env:RELEASE_TITLE `
-            --notes-file '.\.github\release-notes\v0.3.0.md' `
+            --notes-file '.\.github\release-notes\v0.3.1.md' `
             --latest
