@@ -67,7 +67,6 @@ namespace BannerlordCpuOptimizer.Optimization
         {
             lock (Sync)
             {
-                _original = null;
                 _configured = false;
                 _enabled = false;
                 _active = false;
