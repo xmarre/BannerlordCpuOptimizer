@@ -38,6 +38,20 @@ namespace BannerlordCpuOptimizer.Optimization
 
             try
             {
+                MethodInfo sourceLookup = AccessTools.Method(
+                    typeof(FaceGen),
+                    nameof(FaceGen.GetRaceOrDefault),
+                    new[] { typeof(string) });
+                if (sourceLookup == null)
+                {
+                    throw new MissingMethodException(typeof(FaceGen).FullName, nameof(FaceGen.GetRaceOrDefault));
+                }
+                if (!HasOnlyAllowedOwners(sourceLookup))
+                {
+                    throw new InvalidOperationException("foreign Harmony owner on source lookup "
+                        + ProfilerTargetSpec.FormatSignature(sourceLookup));
+                }
+
                 MethodInfo transpiler = typeof(RaceLookupOptimizationPatches).GetMethod(
                     nameof(Transpiler), BindingFlags.Static | BindingFlags.NonPublic);
                 foreach (ProfilerTargetSpec specification in KnownOptimizationTargets.RaceLookupCallers())
@@ -50,7 +64,7 @@ namespace BannerlordCpuOptimizer.Optimization
                     }
                     if (!HasOnlyAllowedOwners(target))
                     {
-                        throw new InvalidOperationException("foreign Harmony owner on "
+                        throw new InvalidOperationException("foreign Harmony owner on caller "
                             + ProfilerTargetSpec.FormatSignature(target));
                     }
 
