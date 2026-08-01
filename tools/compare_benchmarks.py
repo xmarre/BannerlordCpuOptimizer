@@ -41,14 +41,18 @@ def main() -> int:
     optimized = load(args.optimized)
     if baseline.get("ProfilingEnabled") or optimized.get("ProfilingEnabled"):
         raise ValueError("A/B comparison requires profiling-free benchmark reports")
+    if not baseline.get("ProcessCpuMeasurementAvailable") or not optimized.get("ProcessCpuMeasurementAvailable"):
+        raise ValueError("Process CPU measurement was unavailable in one or both reports")
+    if number(baseline, "CampaignHours") <= 0.0 or number(optimized, "CampaignHours") <= 0.0:
+        raise ValueError("Both reports must contain campaign-hour observations")
 
     fields = [
         ("CPU seconds per campaign hour", "ProcessCpuSecondsPerCampaignHour", lower_is_better),
         ("Wall seconds per campaign hour", "WallSecondsPerCampaignHour", lower_is_better),
         ("Campaign hours per real minute", "CampaignHoursPerRealMinute", higher_is_better),
-        ("Average frame interval", "AverageFrameMilliseconds", lower_is_better),
-        ("P95 frame interval", "P95FrameMilliseconds", lower_is_better),
-        ("P99 frame interval", "P99FrameMilliseconds", lower_is_better),
+        ("Average application-tick interval", "AverageFrameMilliseconds", lower_is_better),
+        ("P95 application-tick interval", "P95FrameMilliseconds", lower_is_better),
+        ("P99 application-tick interval", "P99FrameMilliseconds", lower_is_better),
         ("Gen0 collections", "Gen0CollectionsDelta", lower_is_better),
         ("Gen1 collections", "Gen1CollectionsDelta", lower_is_better),
         ("Gen2 collections", "Gen2CollectionsDelta", lower_is_better),
