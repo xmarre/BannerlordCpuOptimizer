@@ -48,24 +48,32 @@ Package after a successful build:
 Expected package:
 
 ```text
-artifacts\BannerlordCpuOptimizer-v0.1.0-profiler-only.zip
+artifacts\BannerlordCpuOptimizer-v0.1.1-profiler-only.zip
 ```
 
 ## Enable profiling
 
-On first launch, the module creates:
+Edit the active packaged configuration:
+
+```text
+Modules\BannerlordCpuOptimizer\ModuleData\BannerlordCpuOptimizer\settings.json
+```
+
+Set:
+
+```json
+"Profiling": {
+  "Enabled": true
+}
+```
+
+`settings.profiler.json` is an enabled template that can be copied over `settings.json`. The packaged `settings.json` is authoritative when present. If it is missing, the module falls back to:
 
 ```text
 %USERPROFILE%\Documents\Mount and Blade II Bannerlord\Configs\BannerlordCpuOptimizer\settings.json
 ```
 
-Set `Profiling.Enabled` to `true`, or copy the values from:
-
-```text
-Modules\BannerlordCpuOptimizer\ModuleData\BannerlordCpuOptimizer\settings.profiler.json
-```
-
-Reports are written to the `reports` directory beside the user configuration. Logs are written to the sibling `logs` directory.
+Every startup log prints the exact loaded settings path and the effective profiler flags. Reports are written under the Documents configuration root in `reports`; logs are written in the sibling `logs` directory.
 
 ## Reports
 
