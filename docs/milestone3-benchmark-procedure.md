@@ -28,17 +28,26 @@ Run baseline and optimized at least three times each when practical. Alternate t
 
 ## Primary comparison fields
 
-- `ProcessCpuSeconds`
+- `ProcessCpuSecondsPerCampaignHour`
+- `WallSecondsPerCampaignHour`
+- `CampaignHoursPerRealMinute`
 - `ProcessCpuPercentOfOneLogicalCore`
 - `ProcessCpuPercentOfWholeMachine`
-- `CampaignHoursPerRealMinute`
 - `AverageFrameMilliseconds`
 - `P95FrameMilliseconds`
 - `P99FrameMilliseconds`
 - `MaximumFrameMilliseconds`
 - `Gen0CollectionsDelta`, `Gen1CollectionsDelta`, and `Gen2CollectionsDelta`
 
-A valid optimized run must also show cache promotion, active hits, zero mismatches, and no disabled reason.
+The campaign-hour-normalized fields remain comparable if one run advances a slightly different number of campaign hours. A valid optimized run must also show cache promotion, active hits, zero mismatches, and no disabled reason.
+
+Compare a baseline and optimized JSON report with:
+
+```powershell
+python tools\compare_benchmarks.py <baseline.json> <optimized.json>
+```
+
+The script refuses reports created with method profiling enabled and prints percentage improvements with the correct lower-is-better or higher-is-better direction for each metric.
 
 ## Focused attribution run
 
