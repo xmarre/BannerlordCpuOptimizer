@@ -13,17 +13,21 @@ namespace BannerlordCpuOptimizer.Optimization
         public static List<T> FilterToList<T>(IEnumerable<T> source, Func<T, bool> predicate)
         {
             Interlocked.Increment(ref _filterCalls);
-            var result = new List<T>();
             if (source == null)
             {
-                return result;
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (predicate == null)
+            {
+                throw new ArgumentNullException(nameof(predicate));
             }
 
+            var result = new List<T>();
             long visited = 0;
             foreach (T item in source)
             {
                 visited++;
-                if (predicate == null || predicate(item))
+                if (predicate(item))
                 {
                     result.Add(item);
                 }
@@ -38,14 +42,18 @@ namespace BannerlordCpuOptimizer.Optimization
             Interlocked.Increment(ref _firstCalls);
             if (source == null)
             {
-                return default(T);
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (predicate == null)
+            {
+                throw new ArgumentNullException(nameof(predicate));
             }
 
             long visited = 0;
             foreach (T item in source)
             {
                 visited++;
-                if (predicate == null || predicate(item))
+                if (predicate(item))
                 {
                     Interlocked.Add(ref _itemsVisited, visited);
                     return item;
