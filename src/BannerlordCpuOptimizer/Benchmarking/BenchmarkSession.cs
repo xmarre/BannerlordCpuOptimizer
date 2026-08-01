@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using BannerlordCpuOptimizer.Optimization;
-using TaleWorlds.MountAndBlade;
 using GameMission = TaleWorlds.MountAndBlade.Mission;
 
 namespace BannerlordCpuOptimizer.Benchmarking
@@ -99,6 +98,8 @@ namespace BannerlordCpuOptimizer.Benchmarking
             double averageFrameMilliseconds = _renderedFrames == 0L
                 ? 0.0
                 : _totalFrameTicks * 1000.0 / Stopwatch.Frequency / _renderedFrames;
+            double cpuSecondsPerCampaignHour = _campaignHours == 0L ? 0.0 : processCpuSeconds / _campaignHours;
+            double wallSecondsPerCampaignHour = _campaignHours == 0L ? 0.0 : wallSeconds / _campaignHours;
 
             return new BenchmarkReport
             {
@@ -132,7 +133,9 @@ namespace BannerlordCpuOptimizer.Benchmarking
                 ManagedBytesEnd = managedBytesEnd,
                 ManagedBytesDelta = managedBytesEnd - _managedBytesStart,
                 CareerChoiceCache = CareerChoiceCache.Snapshot(),
-                Notes = "Whole-process CPU includes every Bannerlord thread. Frame percentiles use a fixed 0.1 ms histogram with values at or above 250 ms grouped into the final bin. Use identical saves, module lists, camera state, campaign speed, and duration for A/B comparisons."
+                Notes = "Whole-process CPU includes every Bannerlord thread. Frame percentiles use a fixed 0.1 ms histogram with values at or above 250 ms grouped into the final bin. Use identical saves, module lists, camera state, campaign speed, and duration for A/B comparisons.",
+                ProcessCpuSecondsPerCampaignHour = cpuSecondsPerCampaignHour,
+                WallSecondsPerCampaignHour = wallSecondsPerCampaignHour
             };
         }
 
