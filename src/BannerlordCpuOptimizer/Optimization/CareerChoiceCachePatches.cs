@@ -6,7 +6,6 @@ using BannerlordCpuOptimizer.Diagnostics;
 using BannerlordCpuOptimizer.Profiling;
 using BannerlordCpuOptimizer.Runtime;
 using HarmonyLib;
-using GameCampaign = TaleWorlds.CampaignSystem.Campaign;
 
 namespace BannerlordCpuOptimizer.Optimization
 {
@@ -17,6 +16,7 @@ namespace BannerlordCpuOptimizer.Optimization
         private readonly Harmony _harmony = new Harmony(HarmonyId);
         private readonly OptimizerSettings _settings;
         private MethodBase _target;
+        private Type _patchType;
         private MethodInfo _prefixMethod;
         private MethodInfo _postfixMethod;
 
@@ -67,14 +67,21 @@ namespace BannerlordCpuOptimizer.Optimization
                     return 0;
                 }
 
-                Type closedPatchType = typeof(TypedPatch<>).MakeGenericType(targetMethod.ReturnType);
-                _prefixMethod = closedPatchType.GetMethod("Prefix", BindingFlags.Static | BindingFlags.NonPublic);
-                _postfixMethod = closedPatchType.GetMethod("Postfix", BindingFlags.Static | BindingFlags.NonPublic);
-                if (_prefixMethod == null || _postfixMethod == null)
-                {
-                    throw new MissingMethodException("Could not construct the typed career-choice cache patch methods.");
-                }
+                MethodInfo beginBridge = typeof(CareerChoicePatchBridge).GetMethod(
+                    nameof(CareerChoicePatchBridge.Begin),
+                    BindingFlags.Public | BindingFlags.Static);
+                MethodInfo completeBridge = typeof(CareerChoicePatchBridge).GetMethod(
+                    nameof(CareerChoicePatchBridge.Complete),
+                    BindingFlags.Public | BindingFlags.Static);
+                ExactResultPatchMethods patchMethods = ExactResultPatchFactory.Create(
+                    targetMethod.ReturnType,
+                    typeof(CareerChoicePatchState),
+                    beginBridge,
+                    completeBridge);
 
+                _patchType = patchMethods.PatchType;
+                _prefixMethod = patchMethods.Prefix;
+                _postfixMethod = patchMethods.Postfix;
                 _harmony.Patch(
                     target,
                     prefix: new HarmonyMethod(_prefixMethod) { priority = Priority.Normal },
@@ -111,6 +118,7 @@ namespace BannerlordCpuOptimizer.Optimization
             finally
             {
                 _target = null;
+                _patchType = null;
                 _prefixMethod = null;
                 _postfixMethod = null;
             }
@@ -142,31 +150,6 @@ namespace BannerlordCpuOptimizer.Optimization
                     + ProfilerTargetSpec.FormatSignature(target) + ": " + string.Join(", ", owners)
                     + ". Original and third-party behavior will continue unchanged.");
             return false;
-        }
-
-        private static class TypedPatch<TResult> where TResult : class
-        {
-            private static bool Prefix(
-                string __0,
-                ref TResult __result,
-                out CareerChoiceCallState __state)
-            {
-                bool served = CareerChoiceCache.TryServeOrBegin(__0, GameCampaign.Current, out object cached, out __state);
-                if (served)
-                {
-                    __result = (TResult)cached;
-                }
-
-                return !served;
-            }
-
-            private static void Postfix(
-                string __0,
-                TResult __result,
-                CareerChoiceCallState __state)
-            {
-                CareerChoiceCache.CompleteCall(__0, __result, __state);
-            }
         }
     }
 }
