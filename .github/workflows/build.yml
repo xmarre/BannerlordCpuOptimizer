@@ -21,7 +21,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
           cache: true
-          cache-dependency-path: src/BannerlordCpuOptimizer/BannerlordCpuOptimizer.csproj
+          cache-dependency-path: |
+            src/BannerlordCpuOptimizer/BannerlordCpuOptimizer.csproj
+            tests/BannerlordCpuOptimizer.HarmonyTeardownHarness/BannerlordCpuOptimizer.HarmonyTeardownHarness.csproj
       - name: Build and run Milestone 2 safety gates
         shell: pwsh
         run: .\build.ps1 -Configuration Release
@@ -31,9 +33,9 @@ jobs:
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: BannerlordCpuOptimizer-v0.2.0-milestone2
+          name: BannerlordCpuOptimizer-v0.2.1-milestone2
           path: |
-            artifacts/BannerlordCpuOptimizer-v0.2.0-milestone2.zip
+            artifacts/BannerlordCpuOptimizer-v0.2.1-milestone2.zip
             artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
