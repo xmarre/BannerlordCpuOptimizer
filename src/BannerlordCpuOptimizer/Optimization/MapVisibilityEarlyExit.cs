@@ -63,13 +63,17 @@ namespace BannerlordCpuOptimizer.Optimization
             }
         }
 
-        internal static void Clear()
+        internal static void Clear(bool releaseOriginal)
         {
             lock (Sync)
             {
                 _configured = false;
                 _enabled = false;
                 _active = false;
+                if (releaseOriginal)
+                {
+                    _original = null;
+                }
             }
         }
 
