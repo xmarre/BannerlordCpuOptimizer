@@ -7,7 +7,7 @@ using HarmonyLib;
 
 namespace BannerlordCpuOptimizer.HarmonyTeardownHarness
 {
-    internal sealed class FakeChoice
+    public sealed class FakeChoice
     {
         internal FakeChoice(string id)
         {
@@ -17,13 +17,13 @@ namespace BannerlordCpuOptimizer.HarmonyTeardownHarness
         internal string Id { get; }
     }
 
-    internal struct FakePatchState
+    public struct FakePatchState
     {
         internal bool HadExpected;
         internal FakeChoice Expected;
     }
 
-    internal static class FakeBridge
+    public static class FakeBridge
     {
         private static readonly Dictionary<string, FakeChoice> Cache =
             new Dictionary<string, FakeChoice>(StringComparer.Ordinal);
