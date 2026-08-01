@@ -106,30 +106,31 @@ namespace BannerlordCpuOptimizer.Profiling
             string temporary = path + ".tmp";
             using (var writer = new StreamWriter(temporary, false, new UTF8Encoding(false)))
             {
-                writer.WriteLine("configured_mode,runtime_state,session_generation,campaign_bound,cache_entries,validated_entries,calls,active_hits,misses,stores,shadow_comparisons,per_id_validations,mismatches,null_results,promotions,audits,disabled_reason");
+                writer.WriteLine("configured_mode,runtime_state,session_generation,campaign_bound,cache_entries,validated_entries,calls,active_hits,misses,stores,shadow_comparisons,per_id_validations,mismatches,null_results,promotions,audits,disabled_reason,map_visibility_optimization,race_lookup_optimization,weekly_companion_optimization");
                 var cache = report.CareerChoiceCache;
-                if (cache != null)
+                writer.WriteLine(string.Join(",", new[]
                 {
-                    writer.WriteLine(string.Join(",", new[]
-                    {
-                        Csv(cache.ConfiguredMode), Csv(cache.RuntimeState),
-                        cache.SessionGeneration.ToString(CultureInfo.InvariantCulture),
-                        cache.CampaignBound ? "true" : "false",
-                        cache.CacheEntries.ToString(CultureInfo.InvariantCulture),
-                        cache.ValidatedEntries.ToString(CultureInfo.InvariantCulture),
-                        cache.Calls.ToString(CultureInfo.InvariantCulture),
-                        cache.ActiveHits.ToString(CultureInfo.InvariantCulture),
-                        cache.Misses.ToString(CultureInfo.InvariantCulture),
-                        cache.Stores.ToString(CultureInfo.InvariantCulture),
-                        cache.ShadowComparisons.ToString(CultureInfo.InvariantCulture),
-                        cache.PerIdValidations.ToString(CultureInfo.InvariantCulture),
-                        cache.Mismatches.ToString(CultureInfo.InvariantCulture),
-                        cache.NullResults.ToString(CultureInfo.InvariantCulture),
-                        cache.Promotions.ToString(CultureInfo.InvariantCulture),
-                        cache.Audits.ToString(CultureInfo.InvariantCulture),
-                        Csv(cache.DisabledReason)
-                    }));
-                }
+                    Csv(cache == null ? null : cache.ConfiguredMode),
+                    Csv(cache == null ? null : cache.RuntimeState),
+                    (cache == null ? 0 : cache.SessionGeneration).ToString(CultureInfo.InvariantCulture),
+                    cache != null && cache.CampaignBound ? "true" : "false",
+                    (cache == null ? 0 : cache.CacheEntries).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0 : cache.ValidatedEntries).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.Calls).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.ActiveHits).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.Misses).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.Stores).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.ShadowComparisons).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.PerIdValidations).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.Mismatches).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.NullResults).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.Promotions).ToString(CultureInfo.InvariantCulture),
+                    (cache == null ? 0L : cache.Audits).ToString(CultureInfo.InvariantCulture),
+                    Csv(cache == null ? null : cache.DisabledReason),
+                    Csv(report.MapVisibilityOptimization),
+                    Csv(report.RaceLookupOptimization),
+                    Csv(report.WeeklyCompanionOptimization)
+                }));
             }
 
             Replace(temporary, path);
