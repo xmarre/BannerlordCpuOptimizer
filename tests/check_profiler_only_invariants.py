@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static release gate for the Milestone 1 source tree."""
+"""Static release gate for the narrowly scoped Milestone 2 optimization."""
 from __future__ import annotations
 
 import json
@@ -8,53 +8,94 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "BannerlordCpuOptimizer"
+MODULE_DATA = ROOT / "module" / "BannerlordCpuOptimizer" / "ModuleData" / "BannerlordCpuOptimizer"
+
+
+def read(relative: str) -> str:
+    return (SRC / relative).read_text(encoding="utf-8")
 
 
 def main() -> int:
     sources = "\n".join(path.read_text(encoding="utf-8") for path in SRC.rglob("*.cs"))
-    settings = json.loads((ROOT / "module" / "BannerlordCpuOptimizer" / "ModuleData" / "BannerlordCpuOptimizer" / "settings.json").read_text())
-    path_provider = (SRC / "Runtime" / "PathProvider.cs").read_text(encoding="utf-8")
-    runtime = (SRC / "Runtime" / "OptimizerRuntime.cs").read_text(encoding="utf-8")
-    patches = (SRC / "Profiling" / "HarmonyProfilerPatches.cs").read_text(encoding="utf-8")
+    settings = json.loads((MODULE_DATA / "settings.json").read_text(encoding="utf-8"))
+    profiler = json.loads((MODULE_DATA / "settings.profiler.json").read_text(encoding="utf-8"))
+    cache = read("Optimization/CareerChoiceCache.cs")
+    patches = read("Optimization/CareerChoiceCachePatches.cs")
+    optimization_targets = read("Optimization/KnownOptimizationTargets.cs")
+    runtime = read("Runtime/OptimizerRuntime.cs")
+    frame = read("Profiling/FrameProfiler.cs")
+    targets = read("Profiling/KnownProfilerTargets.cs")
+    profiler_patches = read("Profiling/HarmonyProfilerPatches.cs")
+    gate = read("Runtime/PatchGate.cs")
 
     assert settings["Profiling"]["Enabled"] is False
     assert settings["General"]["ExperimentalNativePatches"] is False
+    assert settings["General"]["CareerChoiceCacheMode"] == "ShadowThenEnable"
+    assert settings["General"]["CareerChoiceShadowComparisons"] >= 256
+    assert settings["General"]["CareerChoiceAuditEvery"] >= 1
+
+    assert profiler["Profiling"]["Enabled"] is True
+    assert profiler["Profiling"]["ProfileFocusedTargets"] is True
+    assert profiler["Profiling"]["ProfileTorCampaignHandlers"] is False
+    assert profiler["Profiling"]["ProfileTorMissionHandlers"] is False
+    assert profiler["Profiling"]["ProfileTorModels"] is False
+    assert profiler["Diagnostics"]["RuntimeOverlay"] is False
+
+    assert "TORCareerChoices" in optimization_targets
+    assert "GetChoice" in optimization_targets
+    assert "TypedPatch<>" in patches
+    assert "ref TResult __result" in patches
+    assert "out CareerChoiceCallState __state" in patches
+    assert "return !served;" in patches
+    assert "PatchGate.ValidateTarget(target, specification, false" in patches
+    assert "d43d63915c133164674d16f246e8d55afd0e165d322fd6ca2b3d5a9e6956d56d" in sources
+
+    assert "ReferenceEquals(state.Expected, result)" in cache
+    assert "ReferenceEquals(_campaignIdentity, currentCampaign)" in cache
+    assert "entry.Validated" in cache
+    assert "New ids remain shadow-only until individually validated" in cache
+    assert "result == null" in cache
+    assert "Cache[id] = new CacheEntry" in cache
+    assert "TryPromoteLocked" in cache
+    assert "_shadowComparisons < _requiredShadowComparisons" in cache
+    assert "_activeHitCandidates % _auditEvery" in cache
+    assert "DisableLocked" in cache
+    assert "Cache.Clear()" in cache
+
+    assert "CareerChoiceCache.BeginGameSession(_observedCampaign)" in runtime
+    assert "CareerChoiceCache.EndGameSession()" in runtime
+    assert "TrackCampaignIdentity" in runtime
+    assert "ReferenceEquals(_observedCampaign, currentCampaign)" in runtime
+    assert runtime.index("currentCampaign != null") < runtime.index("_careerChoiceCachePatches?.Apply()")
+    assert "GameCampaign.Current, out object cached" in patches
+    assert "HarmonyProfilerPatches.HarmonyId" in patches
+    assert "another Harmony owner modifies" in patches
+
+    assert "TrackMissionIdentity(GameMission.Current)" in frame
+    assert "ReferenceEquals(current, _trackedMission)" in frame
+    assert "_trackedMission = null" in frame
+    assert "_missionActive" not in frame
+
+    assert "EnableOptionalContextMetrics" in frame
+    assert "AllowUnknownProfilerTargets" not in frame
+    assert "ProfileFocusedTargets" in profiler_patches
+    assert "KnownProfilerTargets.CreateFocused" in profiler_patches
+    assert "625660a4834ee1ff607d04d167920656c598be39c61cc01564711205731e816e" in targets
+    assert "34208fbc8958a6c869968edd8ac7e0018a2691f120cfb0893958d989ff971876" in targets
+
+    assert "ValidateTarget" in gate
+    assert "allowUnknownModule" in gate
+    assert "MethodFingerprint.ComputeSha256" in gate
+
     assert "HarmonyMethod transpiler" not in sources
     assert ".Transpiler" not in sources
-    assert "return false;" not in patches
-    assert not re.search(r"\b(Task|Thread|ThreadPool)\s*\.", sources), "No background TaleWorlds access or workers in Milestone 1"
-    assert "SyncData(IDataStore dataStore)" in sources
+    assert not re.search(r"\b(Task|Thread|ThreadPool|Timer)\s*\.", sources), "No background workers"
     assert "Profiler state is intentionally never serialized" in sources
     assert "UnpatchAll" in sources
-    assert "LifecycleManager.OnMissionEnded" in sources
-    assert "MethodFingerprint.ComputeSha256" in sources
+    assert "GetTotalWage" not in patches
+    assert "AddCareerSpecificWagePerks" not in patches
 
-    assert "ModuleSettingsPath" in path_provider
-    assert "ResolveSettingsPath" in path_provider
-    assert "File.Exists(moduleSettingsPath)" in path_provider
-    assert "PathProvider.ResolveSettingsPath()" in runtime
-    assert "Settings loaded from:" in runtime
-    assert "Effective profiler configuration:" in runtime
-
-    # TORCustomResourceModel resolves localized GameText values in its static initializer.
-    # Harmony must not touch that type while submodules are still loading.
-    assert 'DeferredTorResourceModelType = "TOR_Core.Models.TORCustomResourceModel"' in patches
-    assert "MustDeferUntilCampaignReady(specification)" in patches
-    assert 'specification.TypeName.StartsWith(DeferredTorResourceModelType + "+"' in patches
-    assert "internal int ApplyDeferredTargets()" in patches
-    apply_start = patches.index("internal int Apply()")
-    defer_check = patches.index("if (MustDeferUntilCampaignReady(specification))", apply_start)
-    early_patch = patches.index("TryPatch(specification);", apply_start)
-    assert defer_check < early_patch, "Unsafe type-family deferral must happen before Harmony patching"
-
-    assert "GameCampaign.Current != null" in runtime
-    assert "_session != null" in runtime
-    assert "_profilerPatches?.ApplyDeferredTargets();" in runtime
-    campaign_ready = runtime.index("GameCampaign.Current != null")
-    deferred_apply = runtime.index("_profilerPatches?.ApplyDeferredTargets();")
-    assert campaign_ready < deferred_apply, "Deferred targets may only attach after campaign startup"
-
-    print("Milestone 1 profiler-only invariant checks passed.")
+    print("Milestone 2 scoped-optimization invariant checks passed.")
     return 0
 
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using BannerlordCpuOptimizer.Optimization;
 
 namespace BannerlordCpuOptimizer.Profiling
 {
@@ -20,7 +21,8 @@ namespace BannerlordCpuOptimizer.Profiling
         [DataMember(Order = 12)] public List<AssemblySnapshot> Assemblies { get; set; }
         [DataMember(Order = 13)] public List<MethodProfileSnapshot> Methods { get; set; }
         [DataMember(Order = 14)] public List<ContextSnapshot> Context { get; set; }
-        [DataMember(Order = 15)] public string Notes { get; set; }
+        [DataMember(Order = 15)] public CareerChoiceCacheSnapshot CareerChoiceCache { get; set; }
+        [DataMember(Order = 16)] public string Notes { get; set; }
     }
 
     [DataContract]

@@ -34,7 +34,14 @@ namespace BannerlordCpuOptimizer.Profiling
 
         internal int Apply()
         {
-            foreach (ProfilerTargetSpec specification in ProfilerTargetDiscovery.Discover(_settings))
+            var specifications = new List<ProfilerTargetSpec>();
+            if (_settings.Profiling.ProfileFocusedTargets)
+            {
+                specifications.AddRange(KnownProfilerTargets.CreateFocused(_settings.Profiling.FocusedSampleEvery));
+            }
+            specifications.AddRange(ProfilerTargetDiscovery.Discover(_settings));
+
+            foreach (ProfilerTargetSpec specification in specifications)
             {
                 if (MustDeferUntilCampaignReady(specification))
                 {
