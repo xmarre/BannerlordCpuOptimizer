@@ -16,6 +16,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
         private readonly DateTime _startedUtc;
         private readonly long _wallStartTimestamp;
         private readonly long _processCpuStartTicks;
+        private readonly bool _processCpuStartAvailable;
         private readonly int _gen0Start;
         private readonly int _gen1Start;
         private readonly int _gen2Start;
@@ -23,7 +24,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
         private readonly long[] _frameHistogram = new long[HistogramBinCount];
 
         private long _lastFrameTimestamp;
-        private long _renderedFrames;
+        private long _applicationTicks;
         private long _totalFrameTicks;
         private long _maximumFrameTicks;
         private long _campaignHours;
@@ -38,7 +39,8 @@ namespace BannerlordCpuOptimizer.Benchmarking
             _profilingEnabled = profilingEnabled;
             _startedUtc = DateTime.UtcNow;
             _wallStartTimestamp = Stopwatch.GetTimestamp();
-            _processCpuStartTicks = ReadProcessCpuTicks();
+            _processCpuStartAvailable = TryReadProcessCpuTicks(out long processCpuStartTicks);
+            _processCpuStartTicks = processCpuStartTicks;
             _gen0Start = GC.CollectionCount(0);
             _gen1Start = GC.CollectionCount(1);
             _gen2Start = GC.CollectionCount(2);
@@ -56,7 +58,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
                 long elapsed = now - _lastFrameTimestamp;
                 if (elapsed > 0L)
                 {
-                    _renderedFrames++;
+                    _applicationTicks++;
                     _totalFrameTicks += elapsed;
                     if (elapsed > _maximumFrameTicks)
                     {
@@ -90,15 +92,22 @@ namespace BannerlordCpuOptimizer.Benchmarking
         internal BenchmarkReport Complete(string reason)
         {
             long wallEndTimestamp = Stopwatch.GetTimestamp();
-            long processCpuEndTicks = ReadProcessCpuTicks();
+            bool processCpuEndAvailable = TryReadProcessCpuTicks(out long processCpuEndTicks);
+            bool processCpuAvailable = _processCpuStartAvailable
+                && processCpuEndAvailable
+                && processCpuEndTicks >= _processCpuStartTicks;
             long managedBytesEnd = GC.GetTotalMemory(false);
             double wallSeconds = Math.Max(0.000001, (wallEndTimestamp - _wallStartTimestamp) / (double)Stopwatch.Frequency);
-            double processCpuSeconds = Math.Max(0L, processCpuEndTicks - _processCpuStartTicks) / (double)TimeSpan.TicksPerSecond;
+            double processCpuSeconds = processCpuAvailable
+                ? (processCpuEndTicks - _processCpuStartTicks) / (double)TimeSpan.TicksPerSecond
+                : 0.0;
             int logicalProcessors = Math.Max(1, Environment.ProcessorCount);
-            double averageFrameMilliseconds = _renderedFrames == 0L
+            double averageFrameMilliseconds = _applicationTicks == 0L
                 ? 0.0
-                : _totalFrameTicks * 1000.0 / Stopwatch.Frequency / _renderedFrames;
-            double cpuSecondsPerCampaignHour = _campaignHours == 0L ? 0.0 : processCpuSeconds / _campaignHours;
+                : _totalFrameTicks * 1000.0 / Stopwatch.Frequency / _applicationTicks;
+            double cpuSecondsPerCampaignHour = !processCpuAvailable || _campaignHours == 0L
+                ? 0.0
+                : processCpuSeconds / _campaignHours;
             double wallSecondsPerCampaignHour = _campaignHours == 0L ? 0.0 : wallSeconds / _campaignHours;
 
             return new BenchmarkReport
@@ -114,10 +123,10 @@ namespace BannerlordCpuOptimizer.Benchmarking
                 LogicalProcessorCount = logicalProcessors,
                 WallSeconds = wallSeconds,
                 ProcessCpuSeconds = processCpuSeconds,
-                ProcessCpuPercentOfOneLogicalCore = processCpuSeconds / wallSeconds * 100.0,
-                ProcessCpuPercentOfWholeMachine = processCpuSeconds / wallSeconds / logicalProcessors * 100.0,
-                RenderedFrames = _renderedFrames,
-                ApplicationTicksPerSecond = _renderedFrames / wallSeconds,
+                ProcessCpuPercentOfOneLogicalCore = processCpuAvailable ? processCpuSeconds / wallSeconds * 100.0 : 0.0,
+                ProcessCpuPercentOfWholeMachine = processCpuAvailable ? processCpuSeconds / wallSeconds / logicalProcessors * 100.0 : 0.0,
+                ApplicationTicks = _applicationTicks,
+                ApplicationTicksPerSecond = _applicationTicks / wallSeconds,
                 AverageFrameMilliseconds = averageFrameMilliseconds,
                 P50FrameMilliseconds = Percentile(0.50),
                 P95FrameMilliseconds = Percentile(0.95),
@@ -133,9 +142,10 @@ namespace BannerlordCpuOptimizer.Benchmarking
                 ManagedBytesEnd = managedBytesEnd,
                 ManagedBytesDelta = managedBytesEnd - _managedBytesStart,
                 CareerChoiceCache = CareerChoiceCache.Snapshot(),
-                Notes = "Whole-process CPU includes every Bannerlord thread. Frame percentiles use a fixed 0.1 ms histogram with values at or above 250 ms grouped into the final bin. Use identical saves, module lists, camera state, campaign speed, and duration for A/B comparisons.",
+                Notes = "Whole-process CPU includes every Bannerlord thread. Frame intervals are measured between MBSubModuleBase.OnApplicationTick callbacks. Percentiles use a fixed 0.1 ms histogram with values at or above 250 ms grouped into the final bin; the maximum remains exact. Use identical saves, module lists, camera state, campaign speed, and duration for A/B comparisons.",
                 ProcessCpuSecondsPerCampaignHour = cpuSecondsPerCampaignHour,
-                WallSecondsPerCampaignHour = wallSecondsPerCampaignHour
+                WallSecondsPerCampaignHour = wallSecondsPerCampaignHour,
+                ProcessCpuMeasurementAvailable = processCpuAvailable
             };
         }
 
@@ -155,12 +165,12 @@ namespace BannerlordCpuOptimizer.Benchmarking
 
         private double Percentile(double percentile)
         {
-            if (_renderedFrames <= 0L)
+            if (_applicationTicks <= 0L)
             {
                 return 0.0;
             }
 
-            long target = (long)Math.Ceiling(_renderedFrames * percentile);
+            long target = (long)Math.Ceiling(_applicationTicks * percentile);
             long cumulative = 0L;
             for (int index = 0; index < _frameHistogram.Length; index++)
             {
@@ -174,18 +184,20 @@ namespace BannerlordCpuOptimizer.Benchmarking
             return HistogramBinCount * HistogramBinMilliseconds;
         }
 
-        private static long ReadProcessCpuTicks()
+        private static bool TryReadProcessCpuTicks(out long ticks)
         {
             try
             {
                 using (Process process = Process.GetCurrentProcess())
                 {
-                    return process.TotalProcessorTime.Ticks;
+                    ticks = process.TotalProcessorTime.Ticks;
+                    return true;
                 }
             }
             catch
             {
-                return 0L;
+                ticks = 0L;
+                return false;
             }
         }
     }
