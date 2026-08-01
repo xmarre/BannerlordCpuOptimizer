@@ -8,6 +8,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.MountAndBlade;
+using GameCampaign = TaleWorlds.CampaignSystem.Campaign;
 using GameMission = TaleWorlds.MountAndBlade.Mission;
 
 namespace BannerlordCpuOptimizer.Profiling
@@ -64,7 +65,7 @@ namespace BannerlordCpuOptimizer.Profiling
         {
             int activeParties = -1, settlements = -1, livingAgents = -1, totalAgents = -1, missiles = -1;
             string campaignSpeed = null, battleType = null;
-            Campaign campaign = Campaign.Current;
+            GameCampaign campaign = GameCampaign.Current;
             if (campaign != null)
             {
                 activeParties = MobileParty.All?.Count ?? 0;
