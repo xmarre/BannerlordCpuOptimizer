@@ -26,12 +26,20 @@ namespace BannerlordCpuOptimizer.Runtime
                     return;
                 }
 
-                _settings = SettingsLoader.LoadOrCreate(PathProvider.SettingsPath);
+                string settingsPath = PathProvider.ResolveSettingsPath();
+                _settings = SettingsLoader.LoadOrCreate(settingsPath);
                 _settings.Normalize();
                 OptimizerLog.Initialize(PathProvider.LogDirectory, _settings.Diagnostics.VerboseLogging);
                 EquivalenceValidator.IsEnabled = _settings.Diagnostics.ShadowValidation;
 
                 OptimizerLog.Info("BannerlordCpuOptimizer " + (Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown") + " loading.");
+                OptimizerLog.Info("Settings loaded from: " + settingsPath + ".");
+                OptimizerLog.Info("Effective profiler configuration: enabled=" + _settings.Profiling.Enabled
+                    + " torCampaign=" + _settings.Profiling.ProfileTorCampaignHandlers
+                    + " torMission=" + _settings.Profiling.ProfileTorMissionHandlers
+                    + " torModels=" + _settings.Profiling.ProfileTorModels
+                    + " vanilla=" + _settings.Profiling.ProfileVanillaHandlers
+                    + " overlay=" + _settings.Diagnostics.RuntimeOverlay + ".");
                 foreach (AssemblyIdentity identity in AssemblyProbe.CaptureLoadedAssemblies())
                 {
                     OptimizerLog.Info("Assembly: " + identity);
