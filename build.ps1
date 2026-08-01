@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Push-Location $root
