@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.MountAndBlade;
+using GameCampaign = TaleWorlds.CampaignSystem.Campaign;
 
 namespace BannerlordCpuOptimizer.Benchmarking
 {
@@ -25,7 +26,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
             _maximumSpeedSinceTimestamp = 0L;
         }
 
-        internal bool TryOpen(Campaign campaign, out CampaignTimeControlMode startMode)
+        internal bool TryOpen(GameCampaign campaign, out CampaignTimeControlMode startMode)
         {
             startMode = CampaignTimeControlMode.Stop;
             if (!IsArmed)
