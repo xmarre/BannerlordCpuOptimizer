@@ -43,5 +43,11 @@ namespace BannerlordCpuOptimizer.Benchmarking
         [DataMember(Order = 35)] public double ProcessCpuSecondsPerCampaignHour { get; set; }
         [DataMember(Order = 36)] public double WallSecondsPerCampaignHour { get; set; }
         [DataMember(Order = 37)] public bool ProcessCpuMeasurementAvailable { get; set; }
+        [DataMember(Order = 38)] public string StartCondition { get; set; }
+        [DataMember(Order = 39)] public string StartTimeControlMode { get; set; }
+        [DataMember(Order = 40)] public double StartStabilitySeconds { get; set; }
+        [DataMember(Order = 41)] public double ApplicationTicksPerCampaignHour { get; set; }
+        [DataMember(Order = 42)] public double ProcessCpuMillisecondsPerApplicationTick { get; set; }
+        [DataMember(Order = 43)] public double WallMillisecondsPerApplicationTick { get; set; }
     }
 }
