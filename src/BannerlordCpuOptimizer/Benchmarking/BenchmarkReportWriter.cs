@@ -51,7 +51,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
             string temporary = path + ".tmp";
             using (var writer = new StreamWriter(temporary, false, new UTF8Encoding(false)))
             {
-                writer.WriteLine("session_id,run_label,completion_reason,optimizer_version,profiling_enabled,career_choice_cache_mode,logical_processors,process_cpu_measurement_available,wall_seconds,process_cpu_seconds,process_cpu_seconds_per_campaign_hour,wall_seconds_per_campaign_hour,cpu_percent_one_logical_core,cpu_percent_whole_machine,application_ticks,application_ticks_per_second,average_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,max_frame_ms,campaign_hours,campaign_hours_per_real_minute,missions,gen0,gen1,gen2,managed_bytes_start,managed_bytes_end,managed_bytes_delta,cache_runtime_state,cache_calls,cache_active_hits,cache_mismatches,cache_promotions,cache_disabled_reason,map_visibility_optimization,race_lookup_optimization,weekly_companion_optimization");
+                writer.WriteLine("session_id,run_label,completion_reason,optimizer_version,profiling_enabled,career_choice_cache_mode,logical_processors,process_cpu_measurement_available,wall_seconds,process_cpu_seconds,process_cpu_seconds_per_campaign_hour,wall_seconds_per_campaign_hour,cpu_percent_one_logical_core,cpu_percent_whole_machine,application_ticks,application_ticks_per_second,application_ticks_per_campaign_hour,process_cpu_ms_per_application_tick,wall_ms_per_application_tick,average_frame_ms,p50_frame_ms,p95_frame_ms,p99_frame_ms,max_frame_ms,campaign_hours,campaign_hours_per_real_minute,missions,gen0,gen1,gen2,managed_bytes_start,managed_bytes_end,managed_bytes_delta,cache_runtime_state,cache_calls,cache_active_hits,cache_mismatches,cache_promotions,cache_disabled_reason,map_visibility_optimization,race_lookup_optimization,weekly_companion_optimization,start_condition,start_time_control_mode,start_stability_seconds");
                 var cache = report.CareerChoiceCache;
                 writer.WriteLine(string.Join(",", new[]
                 {
@@ -61,6 +61,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
                     F(report.WallSeconds), F(report.ProcessCpuSeconds), F(report.ProcessCpuSecondsPerCampaignHour), F(report.WallSecondsPerCampaignHour),
                     F(report.ProcessCpuPercentOfOneLogicalCore), F(report.ProcessCpuPercentOfWholeMachine),
                     report.ApplicationTicks.ToString(CultureInfo.InvariantCulture), F(report.ApplicationTicksPerSecond),
+                    F(report.ApplicationTicksPerCampaignHour), F(report.ProcessCpuMillisecondsPerApplicationTick), F(report.WallMillisecondsPerApplicationTick),
                     F(report.AverageFrameMilliseconds), F(report.P50FrameMilliseconds), F(report.P95FrameMilliseconds), F(report.P99FrameMilliseconds), F(report.MaximumFrameMilliseconds),
                     report.CampaignHours.ToString(CultureInfo.InvariantCulture), F(report.CampaignHoursPerRealMinute), report.Missions.ToString(CultureInfo.InvariantCulture),
                     report.Gen0CollectionsDelta.ToString(CultureInfo.InvariantCulture), report.Gen1CollectionsDelta.ToString(CultureInfo.InvariantCulture), report.Gen2CollectionsDelta.ToString(CultureInfo.InvariantCulture),
@@ -73,7 +74,10 @@ namespace BannerlordCpuOptimizer.Benchmarking
                     Csv(cache == null ? null : cache.DisabledReason),
                     Csv(report.MapVisibilityOptimization),
                     Csv(report.RaceLookupOptimization),
-                    Csv(report.WeeklyCompanionOptimization)
+                    Csv(report.WeeklyCompanionOptimization),
+                    Csv(report.StartCondition),
+                    Csv(report.StartTimeControlMode),
+                    F(report.StartStabilitySeconds)
                 }));
             }
             Replace(temporary, path);
