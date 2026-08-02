@@ -2,16 +2,16 @@
 
 Measured managed-code optimization, whole-process benchmarking, and focused profiling for Mount & Blade II: Bannerlord v1.3.15 and The Old Realms v1.16.
 
-## v0.4.0 status
+## v0.4.1 status
 
-v0.4.0 contains four released TOR campaign optimizations:
+v0.4.1 retains the four released TOR campaign optimizations from v0.4.0 and fixes benchmark startup contamination:
 
 1. a campaign-bound reference cache for `TORCareerChoices.GetChoice(string)`;
 2. an early-exit settlement existence check inside `TORMapVisibilityModel.GetPartySpottingRange`;
 3. an audited cache for fixed `FaceGen.GetRaceOrDefault(string)` lookups used by TOR health and race classification paths;
 4. exact-order manual loops replacing two temporary LINQ iterator chains in `TORCompanionsCampaignBehavior.WeeklyTick`.
 
-The clean v0.3.2 A/B pair measured the original career-choice cache at approximately 3.28% less whole-process CPU per simulated campaign hour and 2.10% faster maximum-speed campaign simulation in the supplied late-game save. The additional v0.4.0 patches require a new A/B pair before any further percentage is claimed.
+Benchmark and focused-profile counters no longer begin when the save starts loading. The mod waits until maximum campaign speed has remained active continuously for 1.5 real seconds, then resets every measurement and optimization counter at one common boundary.
 
 Final hit-point values are never cached. The weekly companion schedule, randomization, spawn logic, movement, ordering, and save data are unchanged. There are no native engine patches, background TaleWorlds access, AI throttles, or simulation-cadence changes.
 
@@ -73,13 +73,27 @@ No manual settings-file copying is required. Legacy JSON loading remains only as
 
 ## Automatic whole-process benchmark
 
-Baseline, Optimized, and Focused Profiler sessions finish automatically after exactly 200 campaign-hour callbacks. The mod writes reports immediately and displays an in-game completion message.
+After a benchmark save loads, the run is armed but no counters have started. An in-game message asks the user to select maximum campaign speed. The start gate accepts Bannerlord's supported maximum fast-forward modes only when campaign time is unlocked and no mission is active.
+
+Maximum speed must remain continuous for 1.5 real seconds. Any loss of maximum speed resets the pre-start timer. When the gate opens:
+
+- benchmark and profiler sessions begin;
+- process CPU, wall time, application ticks, GC, and managed-memory baselines are captured;
+- career-choice, map-visibility, fixed-race, and weekly-companion states reset;
+- an in-game message confirms that the 200-hour run started.
+
+This excludes save loading, manual fast-forward selection, and initial stabilization from the measurement.
+
+Baseline, Optimized, and Focused Profiler sessions finish automatically after exactly 200 campaign-hour callbacks recorded after that boundary. The mod writes reports immediately and displays an in-game completion message.
 
 Reports contain:
 
+- start condition, time-control mode, and stability interval;
 - process CPU and wall time;
 - CPU and wall seconds per campaign hour;
 - campaign hours per real minute;
+- application ticks per second and per campaign hour;
+- process CPU and wall milliseconds per application tick;
 - application-tick average, p50, p95, p99, and exact maximum interval;
 - mission count;
 - Gen0, Gen1, and Gen2 collection deltas;
@@ -87,7 +101,7 @@ Reports contain:
 - career-choice cache counters;
 - map visibility, fixed-race, and weekly-companion optimization states.
 
-For a controlled A/B test, use the same untouched starting save and identical module list, camera, campaign speed, game settings, and background load. Run Baseline to automatic completion, restore the starting save, then run Optimized to automatic completion.
+For a controlled A/B test, use the same untouched starting save and identical module list, camera, frame limiter, game settings, and background load. Load Baseline, select maximum speed when prompted, and wait for the start and completion messages. Restore the starting save and repeat in Optimized mode.
 
 Primary comparison fields:
 
@@ -95,6 +109,9 @@ Primary comparison fields:
 ProcessCpuSecondsPerCampaignHour
 WallSecondsPerCampaignHour
 CampaignHoursPerRealMinute
+ApplicationTicksPerCampaignHour
+ProcessCpuMillisecondsPerApplicationTick
+WallMillisecondsPerApplicationTick
 AverageFrameMilliseconds
 P95FrameMilliseconds
 P99FrameMilliseconds
@@ -106,9 +123,11 @@ Compare reports with:
 python tools\compare_benchmarks.py <baseline.json> <optimized.json>
 ```
 
+The comparison utility refuses mismatched start modes or stability intervals and rejects application-tick workloads that differ by more than 5% per campaign hour.
+
 ## Focused profiler
 
-v0.4.0 attributes:
+v0.4.1 attributes:
 
 - `TORCharacterStatsModel.MaxHitpoints`;
 - `CalculateHitPoints`;
@@ -141,6 +160,7 @@ Requirements:
 The module targets .NET Framework 4.7.2 with pinned Bannerlord v1.3.15 references. CI runs:
 
 - Milestone 4 static safety gates;
+- lifecycle and stable measurement-boundary checks;
 - structural checks;
 - benchmark-comparison tests;
 - automatic-completion checks;
@@ -157,6 +177,6 @@ Expected outputs:
 
 ```text
 module\BannerlordCpuOptimizer\bin\Win64_Shipping_Client\BannerlordCpuOptimizer.dll
-artifacts\BannerlordCpuOptimizer-v0.4.0-campaign-optimizations.zip
+artifacts\BannerlordCpuOptimizer-v0.4.1-stable-fast-forward-start.zip
 artifacts\SHA256SUMS.txt
 ```
