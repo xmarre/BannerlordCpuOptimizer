@@ -12,6 +12,7 @@ Push-Location $root
 try {
     python '.\tests\check_profiler_only_invariants.py'
     python '.\tests\check_milestone4_lifecycle.py'
+    python '.\tests\check_measurement_start_gate.py'
     python '.\tests\check_source_structure.py'
     python '.\tests\check_benchmark_compare.py'
     python '.\tests\check_auto_benchmark_completion.py'
