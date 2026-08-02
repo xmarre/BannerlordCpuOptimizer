@@ -1,8 +1,8 @@
 using System;
 using System.Diagnostics;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.MountAndBlade;
 using GameCampaign = TaleWorlds.CampaignSystem.Campaign;
+using GameMission = TaleWorlds.MountAndBlade.Mission;
 
 namespace BannerlordCpuOptimizer.Benchmarking
 {
@@ -36,7 +36,7 @@ namespace BannerlordCpuOptimizer.Benchmarking
 
             if (campaign == null
                 || campaign.TimeControlModeLock
-                || Mission.Current != null
+                || GameMission.Current != null
                 || !IsMaximumCampaignSpeed(campaign.TimeControlMode))
             {
                 _maximumSpeedSinceTimestamp = 0L;
