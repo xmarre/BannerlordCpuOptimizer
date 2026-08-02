@@ -13,6 +13,9 @@ namespace BannerlordCpuOptimizer.Benchmarking
         private readonly string _runLabel;
         private readonly string _careerChoiceCacheMode;
         private readonly bool _profilingEnabled;
+        private readonly string _startCondition;
+        private readonly string _startTimeControlMode;
+        private readonly double _startStabilitySeconds;
         private readonly DateTime _startedUtc;
         private readonly long _wallStartTimestamp;
         private readonly long _processCpuStartTicks;
@@ -31,12 +34,21 @@ namespace BannerlordCpuOptimizer.Benchmarking
         private long _missions;
         private GameMission _trackedMission;
 
-        internal BenchmarkSession(string runLabel, string careerChoiceCacheMode, bool profilingEnabled)
+        internal BenchmarkSession(
+            string runLabel,
+            string careerChoiceCacheMode,
+            bool profilingEnabled,
+            string startCondition,
+            string startTimeControlMode,
+            double startStabilitySeconds)
         {
             SessionId = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8);
             _runLabel = string.IsNullOrWhiteSpace(runLabel) ? "unnamed" : runLabel.Trim();
             _careerChoiceCacheMode = careerChoiceCacheMode ?? "unknown";
             _profilingEnabled = profilingEnabled;
+            _startCondition = startCondition ?? "unknown";
+            _startTimeControlMode = startTimeControlMode ?? "unknown";
+            _startStabilitySeconds = Math.Max(0.0, startStabilitySeconds);
             _startedUtc = DateTime.UtcNow;
             _wallStartTimestamp = Stopwatch.GetTimestamp();
             _processCpuStartAvailable = TryReadProcessCpuTicks(out long processCpuStartTicks);
@@ -109,6 +121,15 @@ namespace BannerlordCpuOptimizer.Benchmarking
                 ? 0.0
                 : processCpuSeconds / _campaignHours;
             double wallSecondsPerCampaignHour = _campaignHours == 0L ? 0.0 : wallSeconds / _campaignHours;
+            double applicationTicksPerCampaignHour = _campaignHours == 0L
+                ? 0.0
+                : _applicationTicks / (double)_campaignHours;
+            double processCpuMillisecondsPerApplicationTick = !processCpuAvailable || _applicationTicks == 0L
+                ? 0.0
+                : processCpuSeconds * 1000.0 / _applicationTicks;
+            double wallMillisecondsPerApplicationTick = _applicationTicks == 0L
+                ? 0.0
+                : wallSeconds * 1000.0 / _applicationTicks;
 
             return new BenchmarkReport
             {
@@ -145,10 +166,16 @@ namespace BannerlordCpuOptimizer.Benchmarking
                 MapVisibilityOptimization = MapVisibilityEarlyExit.Describe(),
                 RaceLookupOptimization = RaceLookupCache.Describe(),
                 WeeklyCompanionOptimization = WeeklyCompanionLinqElision.Describe(),
-                Notes = "Whole-process CPU includes every Bannerlord thread. Frame intervals are measured between MBSubModuleBase.OnApplicationTick callbacks. Percentiles use a fixed 0.1 ms histogram with values at or above 250 ms grouped into the final bin; the maximum remains exact. Use identical saves, module lists, camera state, campaign speed, and duration for A/B comparisons.",
+                Notes = "Measurement begins only after maximum campaign speed remains stable for the recorded start-gate interval. Load time, manual fast-forward selection, and initial stabilization are excluded. Whole-process CPU includes every Bannerlord thread. Frame intervals are measured between MBSubModuleBase.OnApplicationTick callbacks. Percentiles use a fixed 0.1 ms histogram with values at or above 250 ms grouped into the final bin; the maximum remains exact.",
                 ProcessCpuSecondsPerCampaignHour = cpuSecondsPerCampaignHour,
                 WallSecondsPerCampaignHour = wallSecondsPerCampaignHour,
-                ProcessCpuMeasurementAvailable = processCpuAvailable
+                ProcessCpuMeasurementAvailable = processCpuAvailable,
+                StartCondition = _startCondition,
+                StartTimeControlMode = _startTimeControlMode,
+                StartStabilitySeconds = _startStabilitySeconds,
+                ApplicationTicksPerCampaignHour = applicationTicksPerCampaignHour,
+                ProcessCpuMillisecondsPerApplicationTick = processCpuMillisecondsPerApplicationTick,
+                WallMillisecondsPerApplicationTick = wallMillisecondsPerApplicationTick
             };
         }
 
