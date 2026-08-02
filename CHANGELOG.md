@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.4.1 - Stable fast-forward measurement start
+
+- Changed benchmark and focused-profile startup from immediate save-load timing to an armed start gate.
+- Added an in-game prompt instructing the user to select maximum campaign speed.
+- Required maximum fast-forward to remain active continuously for 1.5 real seconds before measurement begins.
+- Reset the pre-start timer when maximum speed is lost, campaign time is locked, or a mission is active.
+- Excluded save loading, manual fast-forward selection, and initial stabilization from all benchmark counters.
+- Reset career-choice, map-visibility, fixed-race, weekly-companion, profiler, and benchmark counters at one exact start boundary.
+- Added report fields for start condition, time-control mode, stability duration, application ticks per campaign hour, and CPU/wall milliseconds per application tick.
+- Made the comparison utility reject missing or mismatched stable-start metadata and application-tick workloads differing by more than 5% per campaign hour.
+- Preserved the exact 200-campaign-hour completion target and all v0.4.0 optimization behavior.
+
+## 0.4.0 - Validated TOR campaign optimization pass
+
+- Added an exact-build-gated early-exit replacement for TOR map-visibility settlement existence checks.
+- Added shadow comparisons and periodic original-path audits for map visibility.
+- Added an audited fixed race-ID lookup cache for TOR health and race-classification paths without caching final hit-point values.
+- Replaced two allocation-heavy TOR weekly-companion LINQ chains with exact-order direct loops.
+- Added exact caller/helper/predicate fingerprints and foreign Harmony-owner refusal for every participating method.
+- Added deeper focused attribution for hit-point and weekly-companion child paths.
+- Added MCM controls and runtime report states for every released optimization.
+- Made Baseline disable every released patch and Optimized enable every released safe patch.
+- Preserved weekly schedule, randomization, spawning, ordering, save data, AI cadence, and final combat statistics.
+
 ## 0.3.1 - MCM configuration
 
 - Replaced all packaged JSON settings and mode templates with a proper MCM v5 menu.

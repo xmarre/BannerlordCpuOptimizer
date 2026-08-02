@@ -1,10 +1,12 @@
 using System;
+using System.Globalization;
 using System.Reflection;
 using BannerlordCpuOptimizer.Benchmarking;
 using BannerlordCpuOptimizer.Configuration;
 using BannerlordCpuOptimizer.Diagnostics;
 using BannerlordCpuOptimizer.Optimization;
 using BannerlordCpuOptimizer.Profiling;
+using TaleWorlds.CampaignSystem;
 using GameCampaign = TaleWorlds.CampaignSystem.Campaign;
 
 namespace BannerlordCpuOptimizer.Runtime
@@ -19,6 +21,7 @@ namespace BannerlordCpuOptimizer.Runtime
         private static CareerChoiceCachePatches _careerChoiceCachePatches;
         private static ProfileSession _session;
         private static BenchmarkSession _benchmarkSession;
+        private static MeasurementStartGate _measurementStartGate;
         private static RuntimeOverlay _overlay;
         private static bool _deferredProfilerTargetsApplied;
         private static bool _optimizationPatchAttempted;
@@ -74,6 +77,7 @@ namespace BannerlordCpuOptimizer.Runtime
                     _settings.General.CareerChoiceMinimumDistinctIds,
                     _settings.General.CareerChoiceAuditEvery);
 
+                _measurementStartGate = new MeasurementStartGate();
                 _deferredProfilerTargetsApplied = false;
                 _optimizationPatchAttempted = false;
                 _gameActive = false;
@@ -103,7 +107,10 @@ namespace BannerlordCpuOptimizer.Runtime
                 OptimizerLog.Info("Effective benchmark configuration: enabled=" + _settings.Benchmark.Enabled
                     + " label=" + _settings.Benchmark.RunLabel
                     + " format=" + _settings.Benchmark.ReportFormat
-                    + " automaticTargetHours=" + AutomaticBenchmarkTargetHours + ".");
+                    + " automaticTargetHours=" + AutomaticBenchmarkTargetHours
+                    + " startGate=maximum-campaign-speed"
+                    + " stableSeconds=" + MeasurementStartGate.RequiredStableSeconds.ToString("0.0", CultureInfo.InvariantCulture)
+                    + ".");
                 OptimizerLog.Info("Effective career-choice cache configuration: mode="
                     + _settings.General.CareerChoiceCacheMode
                     + " comparisons=" + _settings.General.CareerChoiceShadowComparisons
@@ -161,6 +168,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 }
             }
 
+            TryStartArmedMeasurement(currentCampaign);
             _benchmarkSession?.OnApplicationTick();
             if (!ProfilingEnabled)
             {
@@ -217,18 +225,15 @@ namespace BannerlordCpuOptimizer.Runtime
                     WriteBenchmark("game-restart");
                 }
 
+                _measurementStartGate?.Disarm();
                 _gameActive = true;
                 _observedCampaign = GameCampaign.Current;
                 CareerChoiceCache.BeginGameSession(_observedCampaign);
                 ResetCampaignOptimizationValidation();
 
-                if (ProfilingEnabled)
+                if (MeasurementEnabled)
                 {
-                    StartSession();
-                }
-                if (BenchmarkEnabled)
-                {
-                    StartBenchmark();
+                    ArmMeasurementStart();
                 }
             }
         }
@@ -237,6 +242,7 @@ namespace BannerlordCpuOptimizer.Runtime
         {
             lock (Sync)
             {
+                _measurementStartGate?.Disarm();
                 _gameActive = false;
                 _observedCampaign = null;
                 if (ProfilingEnabled)
@@ -248,6 +254,7 @@ namespace BannerlordCpuOptimizer.Runtime
                     WriteBenchmark("game-end");
                 }
 
+                _benchmarkCampaignHours = 0;
                 CareerChoiceCache.EndGameSession();
                 LifecycleManager.OnCampaignEnded();
             }
@@ -262,6 +269,7 @@ namespace BannerlordCpuOptimizer.Runtime
                     return;
                 }
 
+                _measurementStartGate?.Disarm();
                 _gameActive = false;
                 _observedCampaign = null;
                 if (ProfilingEnabled)
@@ -279,6 +287,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 _overlay = null;
                 _profilerPatches = null;
                 _careerChoiceCachePatches = null;
+                _measurementStartGate = null;
                 _session = null;
                 _benchmarkSession = null;
                 _settings = null;
@@ -286,7 +295,7 @@ namespace BannerlordCpuOptimizer.Runtime
                 _optimizationPatchAttempted = false;
                 _benchmarkCampaignHours = 0;
                 _initialized = false;
-                OptimizerLog.Info("Teardown complete; profiler, benchmark, optimization, cache, and lifecycle state cleared.");
+                OptimizerLog.Info("Teardown complete; profiler, benchmark, start gate, optimization, cache, and lifecycle state cleared.");
                 OptimizerLog.Shutdown();
             }
         }
@@ -316,6 +325,60 @@ namespace BannerlordCpuOptimizer.Runtime
             OptimizerLog.Info("All TOR campaign optimizations re-entered validation for the current campaign instance.");
         }
 
+        private static void TryStartArmedMeasurement(GameCampaign currentCampaign)
+        {
+            MeasurementStartGate gate = _measurementStartGate;
+            if (gate == null || !gate.TryOpen(currentCampaign, out CampaignTimeControlMode startMode))
+            {
+                return;
+            }
+
+            lock (Sync)
+            {
+                if (!_gameActive
+                    || currentCampaign == null
+                    || !ReferenceEquals(currentCampaign, GameCampaign.Current))
+                {
+                    gate.Arm();
+                    return;
+                }
+
+                CareerChoiceCache.BeginGameSession(currentCampaign);
+                ResetCampaignOptimizationValidation();
+
+                if (ProfilingEnabled)
+                {
+                    StartSession();
+                }
+                if (BenchmarkEnabled)
+                {
+                    StartBenchmark(startMode);
+                }
+
+                OptimizerLog.Info("Measurement started after maximum campaign speed remained stable for "
+                    + MeasurementStartGate.RequiredStableSeconds.ToString("0.0", CultureInfo.InvariantCulture)
+                    + " second(s); startMode=" + startMode + ". All measurement and optimization counters were reset at the boundary.");
+                TaleWorlds.Library.InformationManager.DisplayMessage(
+                    new TaleWorlds.Library.InformationMessage(
+                        "Bannerlord CPU Optimizer: measurement started at stable maximum campaign speed. "
+                        + AutomaticBenchmarkTargetHours + " campaign hours remaining."));
+            }
+        }
+
+        private static void ArmMeasurementStart()
+        {
+            _benchmarkCampaignHours = 0;
+            _measurementStartGate?.Arm();
+            OptimizerLog.Info("Measurement armed. Waiting for maximum campaign speed to remain stable for "
+                + MeasurementStartGate.RequiredStableSeconds.ToString("0.0", CultureInfo.InvariantCulture)
+                + " second(s) before counters begin.");
+            TaleWorlds.Library.InformationManager.DisplayMessage(
+                new TaleWorlds.Library.InformationMessage(
+                    "Bannerlord CPU Optimizer: set campaign speed to maximum. Measurement will begin after "
+                    + MeasurementStartGate.RequiredStableSeconds.ToString("0.0", CultureInfo.InvariantCulture)
+                    + " seconds of stable fast-forward."));
+        }
+
         private static void ResetCampaignOptimizationValidation()
         {
             MapVisibilityEarlyExit.ResetSession();
@@ -329,15 +392,19 @@ namespace BannerlordCpuOptimizer.Runtime
             OptimizerLog.Info("Profile session started: " + _session.SessionId + ".");
         }
 
-        private static void StartBenchmark()
+        private static void StartBenchmark(CampaignTimeControlMode startMode)
         {
             _benchmarkCampaignHours = 0;
             _benchmarkSession = new BenchmarkSession(
                 _settings.Benchmark.RunLabel,
                 _settings.General.CareerChoiceCacheMode,
-                ProfilingEnabled);
+                ProfilingEnabled,
+                "maximum-campaign-speed-stable",
+                startMode.ToString(),
+                MeasurementStartGate.RequiredStableSeconds);
             OptimizerLog.Info("Whole-process benchmark started: " + _benchmarkSession.SessionId
                 + " label=" + _benchmarkSession.RunLabel
+                + " startMode=" + startMode
                 + " automaticTargetHours=" + AutomaticBenchmarkTargetHours + ".");
         }
 
@@ -395,7 +462,7 @@ namespace BannerlordCpuOptimizer.Runtime
 
         private static void LogMilestoneState()
         {
-            OptimizerLog.Info("Milestone 4 mode: exact-gated TOR career-choice, map-visibility, fixed-race, and weekly-companion optimizations with MCM, whole-process A/B benchmarking, focused attribution, and automatic 200-hour completion.");
+            OptimizerLog.Info("Milestone 4 mode: exact-gated TOR career-choice, map-visibility, fixed-race, and weekly-companion optimizations with MCM, whole-process A/B benchmarking, focused attribution, stable maximum-speed start, and automatic 200-hour completion.");
             OptimizerLog.Info("Active optimization boundary: no final hit-point, visibility, companion, AI, random, mission, or save-state value is cached or rescheduled.");
             OptimizerLog.Info("Configured switches: vanilla=" + _settings.General.VanillaSafeOptimizations
                 + " torCampaign=" + _settings.General.TorCampaignOptimizations

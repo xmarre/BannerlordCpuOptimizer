@@ -10,13 +10,17 @@ map_patch = (SRC / "Optimization" / "MapVisibilityOptimizationPatches.cs").read_
 race_patch = (SRC / "Optimization" / "RaceLookupOptimizationPatches.cs").read_text(encoding="utf-8")
 weekly = (SRC / "Optimization" / "WeeklyCompanionLinqElision.cs").read_text(encoding="utf-8")
 
-# Initial campaign start and in-process Campaign.Current replacement must both reset
-# every campaign-sensitive validation/counter set.
-assert runtime.count("ResetCampaignOptimizationValidation();") == 2
+# Initial campaign start, in-process Campaign.Current replacement, and the exact
+# stable-speed measurement boundary must reset every campaign-sensitive state set.
+assert runtime.count("ResetCampaignOptimizationValidation();") == 3
 reset_body = runtime.split("private static void ResetCampaignOptimizationValidation()", 1)[1].split("private static void StartSession()", 1)[0]
 assert "MapVisibilityEarlyExit.ResetSession();" in reset_body
 assert "RaceLookupCache.ResetSession();" in reset_body
 assert "WeeklyCompanionLinqElision.Reset();" in reset_body
+measurement_start = runtime.split("private static void TryStartArmedMeasurement", 1)[1].split("private static void ArmMeasurementStart", 1)[0]
+assert measurement_start.index("CareerChoiceCache.BeginGameSession(currentCampaign);") < measurement_start.index("ResetCampaignOptimizationValidation();")
+assert measurement_start.index("ResetCampaignOptimizationValidation();") < measurement_start.index("StartSession();")
+assert measurement_start.index("ResetCampaignOptimizationValidation();") < measurement_start.index("StartBenchmark(startMode);")
 
 # The caller, reference helper, and predicate all participate in the map replacement,
 # so every one must be free of unknown Harmony owners.
@@ -54,4 +58,4 @@ loop_body = weekly.split("foreach (T item in source)", 1)[1].split("Interlocked.
 assert "Interlocked." not in loop_body
 assert "if (predicate(item))" in loop_body
 
-print("Milestone 4 lifecycle, foreign-owner, fallback, and weekly semantic gates passed.")
+print("Milestone 4 lifecycle, measurement-boundary, foreign-owner, fallback, and weekly semantic gates passed.")

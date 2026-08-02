@@ -138,16 +138,18 @@ def main() -> int:
     assert "MapVisibilityOptimization = MapVisibilityEarlyExit.Describe()" in profile
     assert "AutomaticBenchmarkTargetHours = 200" in runtime
     assert "automatic-target-" in runtime
+    assert "MeasurementStartGate" in runtime
+    assert "maximum-campaign-speed-stable" in runtime
 
     # Release/version/teardown constraints.
-    assert "<Version>0.4.0</Version>" in project
-    assert '<Version value="v0.4.0" />' in module_xml
+    assert "<Version>0.4.1</Version>" in project
+    assert '<Version value="v0.4.1" />' in module_xml
     assert not re.search(r"\b(Task|Thread|ThreadPool|Timer)\s*\.", sources), "No background workers"
     assert "UnpatchAll" in coordinator and "UnpatchAll" in map_patch and "UnpatchAll" in race_patch and "UnpatchAll" in weekly_patch
     assert "HarmonyTeardownHarness" in build
     assert "No test Harmony owner may remain after teardown" in harness
 
-    print("Milestone 4 exact-gated campaign optimization, MCM, benchmark, profiler, and teardown gates passed.")
+    print("Milestone 4 exact-gated campaign optimization, stable-start, MCM, benchmark, profiler, and teardown gates passed.")
     return 0
 
 

@@ -13,8 +13,8 @@ jobs:
     runs-on: windows-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: v0.4.0
-      RELEASE_TITLE: Bannerlord CPU Optimizer v0.4.0 - Validated TOR campaign optimizations
+      RELEASE_TAG: v0.4.1
+      RELEASE_TITLE: Bannerlord CPU Optimizer v0.4.1 - Stable fast-forward benchmark start
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,7 +38,7 @@ jobs:
       - name: Verify package contents
         shell: pwsh
         run: |
-          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.4.0-campaign-optimizations.zip'
+          $zip = '.\artifacts\BannerlordCpuOptimizer-v0.4.1-stable-fast-forward-start.zip'
           $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
           try {
             $entries = $archive.Entries.FullName
@@ -64,10 +64,10 @@ jobs:
             exit 0
           }
           gh release create $env:RELEASE_TAG `
-            '.\artifacts\BannerlordCpuOptimizer-v0.4.0-campaign-optimizations.zip' `
+            '.\artifacts\BannerlordCpuOptimizer-v0.4.1-stable-fast-forward-start.zip' `
             '.\artifacts\SHA256SUMS.txt' `
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
             --title $env:RELEASE_TITLE `
-            --notes-file '.\.github\release-notes\v0.4.0.md' `
+            --notes-file '.\.github\release-notes\v0.4.1.md' `
             --latest

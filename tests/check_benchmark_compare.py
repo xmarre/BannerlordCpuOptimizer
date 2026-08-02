@@ -19,6 +19,12 @@ def report(label: str, optimized: bool) -> dict:
         "ProfilingEnabled": False,
         "ProcessCpuMeasurementAvailable": True,
         "CampaignHours": 200,
+        "StartCondition": "maximum-campaign-speed-stable",
+        "StartTimeControlMode": "StoppableFastForward",
+        "StartStabilitySeconds": 1.5,
+        "ApplicationTicksPerCampaignHour": 65.0 if optimized else 66.0,
+        "ProcessCpuMillisecondsPerApplicationTick": 4.0 * factor,
+        "WallMillisecondsPerApplicationTick": 14.0 * factor,
         "ProcessCpuSecondsPerCampaignHour": 2.0 * factor,
         "WallSecondsPerCampaignHour": 3.0 * factor,
         "CampaignHoursPerRealMinute": 20.0 / factor,
@@ -38,6 +44,15 @@ def report(label: str, optimized: bool) -> dict:
     }
 
 
+def run(script: pathlib.Path, baseline: pathlib.Path, optimized: pathlib.Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(script), str(baseline), str(optimized)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory() as temporary:
         directory = pathlib.Path(temporary)
@@ -46,28 +61,33 @@ def main() -> int:
         baseline.write_text(json.dumps(report("baseline", False)), encoding="utf-8")
         optimized.write_text(json.dumps(report("optimized", True)), encoding="utf-8")
 
-        valid = subprocess.run(
-            [sys.executable, str(SCRIPT), str(baseline), str(optimized)],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+        valid = run(SCRIPT, baseline, optimized)
         assert valid.returncode == 0, valid.stderr
         assert "CPU seconds per campaign hour" in valid.stdout
+        assert "Start gate:" in valid.stdout
         assert "+10.000%" in valid.stdout
         assert "state=Enabled" in valid.stdout
 
         invalid_data = report("profiled", True)
         invalid_data["ProfilingEnabled"] = True
         optimized.write_text(json.dumps(invalid_data), encoding="utf-8")
-        invalid = subprocess.run(
-            [sys.executable, str(SCRIPT), str(baseline), str(optimized)],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+        invalid = run(SCRIPT, baseline, optimized)
         assert invalid.returncode != 0
         assert "profiling-free" in invalid.stderr
+
+        invalid_data = report("wrong-start", True)
+        invalid_data["StartCondition"] = "game-load"
+        optimized.write_text(json.dumps(invalid_data), encoding="utf-8")
+        invalid = run(SCRIPT, baseline, optimized)
+        assert invalid.returncode != 0
+        assert "stable maximum-campaign-speed start gate" in invalid.stderr
+
+        invalid_data = report("different-workload", True)
+        invalid_data["ApplicationTicksPerCampaignHour"] = 80.0
+        optimized.write_text(json.dumps(invalid_data), encoding="utf-8")
+        invalid = run(SCRIPT, baseline, optimized)
+        assert invalid.returncode != 0
+        assert "Application-tick workload differs" in invalid.stderr
 
     print("Benchmark comparison utility checks passed.")
     return 0
